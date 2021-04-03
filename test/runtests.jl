@@ -116,13 +116,16 @@ end
     @info "True scale = $true_scale"
     n_dpts = 10
     data = true_loc .+ true_scale .* randn(n_dpts)
+    prior_samples = prior(normal_model, (:loc, :scale), data; nsamples = 100)
+    @info "Prior E[loc] = $(mean(prior_samples[:loc]))"
+    @info "Prior E[scale] = $(mean(prior_samples[:scale]))"
 
     posterior = likelihood_weighting(normal_model, data; nsamples = 1000)
     log_p_x = log_evidence(posterior)
     @info "Log evidence = $log_p_x"
 
-    post_loc = sample(posterior, :loc, 1000)
-    post_scale = sample(posterior, :scale, 1000)
+    post_loc = sample(posterior, :loc, 2000)
+    post_scale = sample(posterior, :scale, 2000)
     @info "Posterior E[loc] = $(mean(post_loc))"
     @info "Posterior E[scale] = $(mean(post_scale))"
 end

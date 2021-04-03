@@ -112,6 +112,23 @@ function observe(t :: Trace, a, d, s)
     sample(t, a, d, s, Standard())
 end
 
+function prior(f :: F, addresses :: Union{AbstractArray, Tuple}, params...; nsamples :: Int = 1) where F <: Function
+    d = Dict(a => [] for a in addresses)
+    t = trace()
+    for n in 1:nsamples
+        f(t, params...)
+        kk = keys(t)
+        for a in addresses
+            if a in kk
+                push!(d[a], t[a].value)
+            else
+                push!(d[a], nothing)
+            end
+        end
+    end
+    d
+end
 
-export Node, node, Trace, trace, logprob, logprob!, sample, observe, loglikelihood
+
+export Node, node, Trace, trace, logprob, logprob!, sample, observe, loglikelihood, prior
 export Interpretation, Nonstandard, Standard, Replayed
