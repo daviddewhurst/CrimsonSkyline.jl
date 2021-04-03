@@ -5,6 +5,7 @@ struct Nonstandard <: Interpretation end
 struct Standard <: Interpretation end
 struct Replayed <: Interpretation end
 struct Conditioned <: Interpretation end 
+struct Deterministic <: Interpretation end
 
 mutable struct Node{A, D, T, P}
     address :: A
@@ -43,15 +44,18 @@ Base.length(t :: Trace) = length(t.trace)
 
 function node_info(t :: Trace, a)
     n = t[a]
-    info = Dict(
+    info = OrderedDict(
         "address" => n.address,
         "dist" => n.dist,
-        "observed" => n.observed
+        "observed" => n.observed,
+        "interpretation" => string(n.interpretation)
     )
     if n.observed
         info["data"] = n.value
     end
     ch = [that_n.address for that_n in n.ch]
+    pa = [that_n.address for that_n in n.pa]
+    info["pa"] = pa
     (info, ch)
 end
 
@@ -138,6 +142,19 @@ function sample(t :: Trace, a, d, s, i :: Standard; pa = ())
     s
 end
 
+function sample(t :: Trace, a, f, v, i :: Deterministic; pa = ())
+    T = typeof(v)
+    r = f(v...)
+    n = node(T, a, f, false, i)
+    t[a] = n
+    connect_pa_ch!(t, pa, a)
+    r
+end
+
+function transform(t :: Trace, a, f :: F, v; pa = ()) where F <: Function
+    sample(t, a, f, v, Deterministic(); pa = pa)
+end
+
 function sample(t :: Trace, a, d; pa = ())
     if a in keys(t)
         sample(t, a, d, t[a].interpretation; pa = pa)
@@ -177,5 +194,5 @@ end
 
 
 export Node, node, Trace, trace, logprob, logprob!, sample, observe, loglikelihood, prior
-export node_info, graph
-export Interpretation, Nonstandard, Standard, Replayed
+export node_info, graph, transform
+export Interpretation, Nonstandard, Standard, Replayed, Deterministic

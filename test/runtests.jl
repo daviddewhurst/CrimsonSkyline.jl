@@ -1,6 +1,6 @@
 using Test
 using Logging
-using Distributions: Normal, Poisson, Gamma, LogNormal
+using Distributions: Normal, Poisson, Gamma, LogNormal, Bernoulli
 using StatsBase: mean, std
 using PrettyPrint: pprintln
 
@@ -148,11 +148,34 @@ end
     @test :scale == t[(:obs, 1)].pa[2].address
 end
 
-@testset "get graph from trace" begin
+@testset "get straight graph from trace" begin
     t = trace()
     data = [1.0, -4.1]
-    r = normal_graph_model(t, data)
+    normal_graph_model(t, data)
     info, g = graph(t)
-    pprintln(info)
-    pprintln(g)
+    @test length(info[:scale]["pa"]) == 0
+    @test length(info[(:obs, 1)]["pa"]) == 2
+    @test g[:scale] == [(:obs, 1), (:obs, 2)]
+end
+
+function test_switch_model(t :: Trace)
+    z = sample(t, :z, Bernoulli(0.5))
+    loc1 = sample(t, :loc1, Normal(0.0, 1.0))
+    loc2 = sample(t, :loc2, Normal(1.0, 1.0))
+    val = transform(t, :val,
+        (z, a, b) -> if z < 1 a else b end,
+        (z, loc1, loc2);
+        pa = (:z, :loc1, :loc2)
+    )
+    data = sample(t, :data, Normal(val, 1.0); pa = (:val,))
+    data
+end
+
+@testset "get transformed graph from trace" begin
+    t = trace()
+    test_switch_model(t)
+    info, g = graph(t)
+    @test info[:val]["interpretation"] == "Deterministic()"
+    @test g[:val] == [:data]
+    @test info[:val]["pa"] == [:z, :loc1, :loc2]
 end
