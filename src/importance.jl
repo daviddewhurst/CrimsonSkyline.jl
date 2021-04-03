@@ -10,23 +10,13 @@ function importance_results()
     ImportanceResults(Array{Float64, 1}(), Array{Any, 1}(), Array{Trace, 1}())
 end
 
-function likelihood_log_weight(t :: Trace)
-    log_w = 0.0
-    for v in values(t)
-        if v.observed
-            log_w += v.logprob_sum
-        end
-    end
-    log_w
-end
-
 function likelihood_weighting(f :: F, params...; nsamples :: Int = 1) where F <: Function
     results = importance_results()
     for n in 1:nsamples
         t = trace()
         r_n = f(t, params...)
         logprob!(t)
-        log_w = likelihood_log_weight(t)
+        log_w = loglikelihood(t)
         push!(results.log_weights, log_w)
         push!(results.return_values, r_n)
         push!(results.traces, t)
