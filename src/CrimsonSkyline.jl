@@ -11,8 +11,11 @@ module CrimsonSkyline
 using DataStructures
 using Distributions
 using PrettyPrint: pprintln
+using StatsBase
 
+include("util.jl")
 include("trace.jl")
 include("effects.jl")
+include("importance.jl")
 
 end # module
