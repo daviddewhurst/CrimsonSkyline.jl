@@ -129,3 +129,30 @@ end
     @info "Posterior E[loc] = $(mean(post_loc))"
     @info "Posterior E[scale] = $(mean(post_scale))"
 end
+
+function normal_graph_model(t :: Trace, data :: Vector{Float64})
+    loc = sample(t, :loc, Normal())
+    scale = sample(t, :scale, LogNormal())
+    for i in 1:length(data)
+        observe(t, (:obs, i), Normal(loc, scale), data[i]; pa=(:loc, :scale))
+    end
+end
+
+@testset "get graph materials from trace" begin
+    t = trace()
+    data = [1.0, -4.1]
+    r = normal_graph_model(t, data)
+    @test all([(:obs, i) == t[:loc].ch[i].address for i in 1:length(data)])
+    @test all([(:obs, i) == t[:scale].ch[i].address for i in 1:length(data)])
+    @test :loc == t[(:obs, 1)].pa[1].address
+    @test :scale == t[(:obs, 1)].pa[2].address
+end
+
+@testset "get graph from trace" begin
+    t = trace()
+    data = [1.0, -4.1]
+    r = normal_graph_model(t, data)
+    info, g = graph(t)
+    pprintln(info)
+    pprintln(g)
+end

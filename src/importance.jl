@@ -12,14 +12,14 @@ end
 
 function likelihood_weighting(f :: F, params...; nsamples :: Int = 1) where F <: Function
     results = importance_results()
+    t = trace()
     for n in 1:nsamples
-        t = trace()
         r_n = f(t, params...)
         logprob!(t)
         log_w = loglikelihood(t)
         push!(results.log_weights, log_w)
         push!(results.return_values, r_n)
-        push!(results.traces, t)
+        push!(results.traces, deepcopy(t))
     end
     results
 end
