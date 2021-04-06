@@ -15,6 +15,7 @@ using StatsBase
 
 include("util.jl")
 include("trace.jl")
+include("graph.jl")
 include("effects.jl")
 include("importance.jl")
 

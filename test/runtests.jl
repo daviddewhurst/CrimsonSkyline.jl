@@ -152,10 +152,10 @@ end
     t = trace()
     data = [1.0, -4.1]
     normal_graph_model(t, data)
-    info, g = graph(t)
-    @test length(info[:scale]["pa"]) == 0
-    @test length(info[(:obs, 1)]["pa"]) == 2
-    @test g[:scale] == [(:obs, 1), (:obs, 2)]
+    ir = graph_ir(t)
+    @test length(ir.info[:scale]["pa"]) == 0
+    @test length(ir.info[(:obs, 1)]["pa"]) == 2
+    @test ir.graph[:scale] == [(:obs, 1), (:obs, 2)]
 end
 
 function test_switch_model(t :: Trace)
@@ -174,8 +174,25 @@ end
 @testset "get transformed graph from trace" begin
     t = trace()
     test_switch_model(t)
-    info, g = graph(t)
-    @test info[:val]["interpretation"] == "Deterministic()"
-    @test g[:val] == [:data]
-    @test info[:val]["pa"] == [:z, :loc1, :loc2]
+    ir = graph_ir(t)
+    @test ir.info[:val]["interpretation"] == "Deterministic()"
+    @test ir.graph[:val] == [:data]
+    @test ir.info[:val]["pa"] == [:z, :loc1, :loc2]
+end
+
+@testset "get factor graph from graph ir" begin
+    t = trace()
+    test_switch_model(t)
+    factor_graph = factor(t)
+    # verify factor construction
+    @test factor_graph.factor_to_node[0] == Set((:data, :val))
+    @test factor_graph.factor_to_node[1] == Set((:val, :z, :loc1, :loc2))
+    @test factor_graph.factor_to_node[2] == Set((:loc2,))
+    @test factor_graph.factor_to_node[3] == Set((:loc1,))
+    @test factor_graph.factor_to_node[4] == Set((:z,))
+    @test factor_graph.node_to_factor[:z] == Set((4, 1))
+    @test factor_graph.node_to_factor[:loc1] == Set((3, 1))
+    @test factor_graph.node_to_factor[:loc2] == Set((2, 1))
+    @test factor_graph.node_to_factor[:val] == Set((1, 0))
+    @test factor_graph.node_to_factor[:data] == Set((0,))
 end

@@ -42,34 +42,6 @@ Base.values(t :: Trace) = values(t.trace)
 Base.keys(t :: Trace) = keys(t.trace)
 Base.length(t :: Trace) = length(t.trace)
 
-function node_info(t :: Trace, a)
-    n = t[a]
-    info = OrderedDict(
-        "address" => n.address,
-        "dist" => n.dist,
-        "observed" => n.observed,
-        "interpretation" => string(n.interpretation)
-    )
-    if n.observed
-        info["data"] = n.value
-    end
-    ch = [that_n.address for that_n in n.ch]
-    pa = [that_n.address for that_n in n.pa]
-    info["pa"] = pa
-    (info, ch)
-end
-
-function graph(t :: Trace)
-    g = OrderedDict()
-    info = OrderedDict()
-    for n in values(t)
-        (node, children) = node_info(t, n.address)
-        info[node["address"]] = node
-        g[node["address"]] = children
-    end
-    (info, g)
-end
-
 function logprob(t :: Trace)
     l = 0.0
     for v in values(t)
