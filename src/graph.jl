@@ -4,7 +4,7 @@ function node_info(t :: Trace, a)
         "address" => n.address,
         "dist" => n.dist,
         "observed" => n.observed,
-        "interpretation" => string(n.interpretation)
+        "interpretation" => n.interpretation
     )
     if n.observed
         info["data"] = n.value

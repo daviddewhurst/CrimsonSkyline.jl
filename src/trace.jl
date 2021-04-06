@@ -7,6 +7,12 @@ struct Replayed <: Interpretation end
 struct Conditioned <: Interpretation end 
 struct Deterministic <: Interpretation end
 
+const NONSTANDARD = Nonstandard()
+const STANDARD = Standard()
+const REPLAYED = Replayed()
+const CONDITIONED = Conditioned()
+const DETERMINISTIC = Deterministic()
+
 mutable struct Node{A, D, T, P}
     address :: A
     dist :: D
@@ -124,14 +130,14 @@ function sample(t :: Trace, a, f, v, i :: Deterministic; pa = ())
 end
 
 function transform(t :: Trace, a, f :: F, v; pa = ()) where F <: Function
-    sample(t, a, f, v, Deterministic(); pa = pa)
+    sample(t, a, f, v, DETERMINISTIC; pa = pa)
 end
 
 function sample(t :: Trace, a, d; pa = ())
     if a in keys(t)
         sample(t, a, d, t[a].interpretation; pa = pa)
     else
-        sample(t, a, d, Nonstandard(); pa = pa)
+        sample(t, a, d, NONSTANDARD; pa = pa)
     end
 end
 
@@ -139,12 +145,12 @@ function sample(t :: Trace, a, d, params; pa = ())
     if a in keys(t)
         sample(t, a, d, params, t[a].interpretation; pa = pa)
     else
-        sample(t, a, d, params, Nonstandard(); pa = pa)
+        sample(t, a, d, params, NONSTANDARD; pa = pa)
     end
 end
 
 function observe(t :: Trace, a, d, s; pa = ())
-    sample(t, a, d, s, Standard(); pa = pa)
+    sample(t, a, d, s, STANDARD; pa = pa)
 end
 
 function prior(f :: F, addresses :: Union{AbstractArray, Tuple}, params...; nsamples :: Int = 1) where F <: Function
@@ -167,4 +173,4 @@ end
 
 export Node, node, Trace, trace, logprob, logprob!, sample, observe, loglikelihood, prior
 export node_info, graph, transform
-export Interpretation, Nonstandard, Standard, Replayed, Deterministic
+export NONSTANDARD, STANDARD, REPLAYED, CONDITIONED, DETERMINISTIC

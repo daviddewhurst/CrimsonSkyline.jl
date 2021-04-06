@@ -14,6 +14,7 @@ using PrettyPrint: pprintln
 using StatsBase
 
 include("util.jl")
+include("cpt.jl")
 include("trace.jl")
 include("graph.jl")
 include("effects.jl")

@@ -9,14 +9,14 @@ using CrimsonSkyline
 @testset "node construction" begin 
     dist = Normal()
     address = :z 
-    n = node(Float64, address, dist, false, Nonstandard())
+    n = node(Float64, address, dist, false, NONSTANDARD)
     @test n.logprob == 0.0
 end
 
 @testset "trace construction" begin
     dist = Normal()
     address = :z 
-    n = node(Float64, address, dist, false, Nonstandard())
+    n = node(Float64, address, dist, false, NONSTANDARD)
     t = trace()
     t[address] = n
     @test t[address] == n
@@ -85,7 +85,7 @@ end
     logprob!(t)
     # modify a trace element
     t2 = deepcopy(t)
-    t2[:scale] = node(2.0, :scale, t[:scale].dist, false, Nonstandard())
+    t2[:scale] = node(2.0, :scale, t[:scale].dist, false, NONSTANDARD)
     @test t[:scale].value != t2[:scale].value
     @test t[:scale].dist == t2[:scale].dist
     # replay the program using the new trace
@@ -175,7 +175,7 @@ end
     t = trace()
     test_switch_model(t)
     ir = graph_ir(t)
-    @test ir.info[:val]["interpretation"] == "Deterministic()"
+    @test ir.info[:val]["interpretation"] == DETERMINISTIC
     @test ir.graph[:val] == [:data]
     @test ir.info[:val]["pa"] == [:z, :loc1, :loc2]
 end
@@ -195,4 +195,19 @@ end
     @test factor_graph.node_to_factor[:loc2] == Set((2, 1))
     @test factor_graph.node_to_factor[:val] == Set((1, 0))
     @test factor_graph.node_to_factor[:data] == Set((0,))
+end
+
+@testset "generate cpt" begin
+    dims = Dict("cost" => ["high", "low"], "revenue" => ["high", "medium", "low"])
+    c = cpt(dims)
+    c[("high", "low")] = 0.4
+    c[("high", "high")] = 0.2
+    c[("low", "low")] = 0.3
+    renormalize!(c)
+    high_med = c[("high", "medium")]
+    low_low = c[("low", "low")]
+    high_low = c[("high", "low")]
+    @info "P(cost=high, revenue=medium) = $high_med"
+    @info "P(cost=low, revenue=low) = $low_low"
+    @info "P(cost=high, revenue=low) = $high_low"
 end

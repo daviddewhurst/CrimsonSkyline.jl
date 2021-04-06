@@ -8,9 +8,9 @@ end
 
 function replay(f :: F, t :: Trace, params...) where F <: Function
     t_new = deepcopy(t)
-    interpret_latent!(t_new, Replayed())
+    interpret_latent!(t_new, REPLAYED)
     r = f(t_new, params...)
-    interpret_latent!(t_new, Nonstandard())
+    interpret_latent!(t_new, NONSTANDARD)
     (r, t_new)
 end
 
