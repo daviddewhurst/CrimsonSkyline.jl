@@ -3,6 +3,7 @@ using Logging
 using Distributions: Normal, Poisson, Gamma, LogNormal, Bernoulli
 using StatsBase: mean, std
 using PrettyPrint: pprintln
+using Plots
 
 using CrimsonSkyline
 
@@ -210,4 +211,34 @@ end
     @info "P(cost=high, revenue=medium) = $high_med"
     @info "P(cost=low, revenue=low) = $low_low"
     @info "P(cost=high, revenue=low) = $high_low"
+end
+
+function wider_normal_model(t :: Trace, data :: Vector{Float64})
+    loc = sample(t, :loc, Normal(0.0, 10.0))
+    scale = sample(t, :scale, LogNormal())
+    for i in 1:length(data)
+        observe(t, (:obs, i), Normal(loc, scale), data[i])
+    end
+end
+
+@testset "prior metropolis proposal 1" begin
+    data = randn(100) .+ 4.0
+    t = trace()
+    wider_normal_model(t, data)
+    
+    locs = []
+    scales = []
+    lls = []
+
+    for i in 1:50000
+        t = mh_step(t, wider_normal_model, data)
+        push!(locs, t[:loc].value)
+        push!(scales, t[:scale].value)
+        push!(lls, loglikelihood(t))
+    end
+    
+    p = plot()
+    plot!(p, locs)
+    savefig(p, joinpath(@__DIR__, "..", "_plots", "test_loc.png"))
+
 end

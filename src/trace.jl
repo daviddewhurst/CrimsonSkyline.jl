@@ -6,12 +6,14 @@ struct Standard <: Interpretation end
 struct Replayed <: Interpretation end
 struct Conditioned <: Interpretation end 
 struct Deterministic <: Interpretation end
+struct Proposed <: Interpretation end
 
 const NONSTANDARD = Nonstandard()
 const STANDARD = Standard()
 const REPLAYED = Replayed()
 const CONDITIONED = Conditioned()
 const DETERMINISTIC = Deterministic()
+const PROPOSED = Proposed()
 
 mutable struct Node{A, D, T, P}
     address :: A
@@ -95,10 +97,15 @@ function sample(t :: Trace, a, d, i :: Nonstandard; pa = ())
 end
 
 function sample(t :: Trace, a, d, i :: Replayed; pa = ())
-    n = node(t[a].value, a, d, false, i)
-    t[a] = n
-    connect_pa_ch!(t, pa, a)
-    t[a].value
+    if a in keys(t)
+        n = node(t[a].value, a, d, false, i)
+        t[a] = n
+        connect_pa_ch!(t, pa, a)
+        t[a].value
+    else
+        # sample spaces of different dimensionality
+        sample(t, a, d, NONSTANDARD; pa = pa)
+    end
 end
 
 function sample(t :: Trace, a, d, params, i :: Replayed; pa = ())
