@@ -150,7 +150,11 @@ function sample(t :: Trace, a, d, params; pa = ())
 end
 
 function observe(t :: Trace, a, d, s; pa = ())
-    sample(t, a, d, s, STANDARD; pa = pa)
+    if s === nothing
+        sample(t, a, d, NONSTANDARD; pa = pa)
+    else
+        sample(t, a, d, s, STANDARD; pa = pa)
+    end
 end
 
 function prior(f :: F, addresses :: Union{AbstractArray, Tuple}, params...; nsamples :: Int = 1) where F <: Function
