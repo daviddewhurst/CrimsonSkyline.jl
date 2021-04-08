@@ -10,8 +10,8 @@ const ASYMMETRIC = Asymmetric()
 
 function sample(t :: Trace, a, d, i :: Proposed)
     new_t = deepcopy(t)
-    prop = sample(new_t, a, d, NONSTANDARD)
-    (prop, new_t)
+    sample(new_t, a, d, NONSTANDARD)
+    new_t
 end
 propose(t :: Trace, a, d) = sample(t, a, d, PROPOSED)
 symmetric(f) = false
@@ -26,36 +26,28 @@ function loglatent(t :: Trace)
     l
 end
 
-function log_acceptance_ratio(t :: Trace, t_proposed :: Trace, p :: Symmetric)
-    log_proposal_joint = logprob(t_proposed)
-    log_orig_joint = logprob(t)
-    log_proposal_joint - log_orig_joint
-end
-
 function log_acceptance_ratio(t :: Trace, t_proposed :: Trace, p :: Prior)
     log_proposal_lik = loglikelihood(t_proposed)
     log_orig_lik = loglikelihood(t)
     log_proposal_lik - log_orig_lik
 end
 
-function mh_step(t :: Trace, f :: F, params...) where F <: Function 
-    new_t = trace()
-    f(new_t, params...)
-    log_a = log_acceptance_ratio(t, new_t, PRIOR)
+function accept(t :: Trace, new_t :: Trace, log_a :: Float64)
     if log(rand()) < log_a
-        return new_t
+        new_t
     else
-        return t
+        t
     end
 end
 
-function mh_step(f :: F1, q :: F2) where {F1, F2 <: Function}
-
+function mh_step(t :: Trace, f :: F; params = ()) where F <: Function 
+    new_t = trace()
+    f(new_t, params...)
+    log_a = log_acceptance_ratio(t, new_t, PRIOR)
+    accept(t, new_t, log_a)
 end
 
-gaussian_single_site_proposal(t :: Trace, a; scale :: Float64 = 0.5) = propose(t, a, Normal(t[a].value, scale))
-symmetric(f::typeof(gaussian_single_site_proposal)) = true
 
 
 export propose, is_symmetric, sampled_addresses
-export gaussian_single_site_proposal, mh_step
+export mh_step

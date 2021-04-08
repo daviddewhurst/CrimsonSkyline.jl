@@ -90,16 +90,30 @@ end
     @test t[:scale].value != t2[:scale].value
     @test t[:scale].dist == t2[:scale].dist
     # replay the program using the new trace
-    (r_obs, new_t) = replay(program2!, t2, data)
-    logprob!(new_t)
+    t_new, replayed_f = replay(program2!, t2)
+    r_obs = replayed_f(data)
+    logprob!(t_new)
     @test r_obs == data
-    @test t[:scale].dist == new_t[:scale].dist
-    @test t[:log_rate].dist != new_t[:log_rate].dist
-    @test new_t[:scale].value == 2.0
+    @test t[:scale].dist == t_new[:scale].dist
+    @test t[:log_rate].dist != t_new[:log_rate].dist
+    @test t_new[:scale].value == 2.0
     @info "Old scale node: $(t[:scale])"
-    @info "New scale node: $(new_t[:scale])"
+    @info "New scale node: $(t_new[:scale])"
     @info "Old log_rate node: $(t[:log_rate])"
-    @info "New log_rate node: $(new_t[:log_rate])"
+    @info "New log_rate node: $(t_new[:log_rate])"
+end
+
+@testset "block" begin
+    data = [1, 1, 2, 1, 5]
+    t = trace()
+    obs = program2!(t, data)
+    logprob!(t)
+    @test :loc in keys(t)
+
+    t_new, blocked_f = block(program2!, t, (:loc,))
+    r_obs = blocked_f(data)
+    logprob!(t_new)
+    @test !(:loc in keys(t_new))
 end
 
 function normal_model(t :: Trace, data :: Vector{Float64})
@@ -230,8 +244,8 @@ end
     scales = []
     lls = []
 
-    for i in 1:50000
-        t = mh_step(t, wider_normal_model, data)
+    for i in 1:10000
+        t = mh_step(t, wider_normal_model; params = (data,))
         push!(locs, t[:loc].value)
         push!(scales, t[:scale].value)
         push!(lls, loglikelihood(t))
@@ -240,5 +254,7 @@ end
     p = plot()
     plot!(p, locs)
     savefig(p, joinpath(@__DIR__, "..", "_plots", "test_loc.png"))
-
+    p = plot()
+    plot!(p, scales)
+    savefig(p, joinpath(@__DIR__, "..", "_plots", "test_scale.png"))
 end

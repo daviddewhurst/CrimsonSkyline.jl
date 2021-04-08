@@ -1,17 +1,19 @@
-function interpret_latent!(t :: Trace, i :: Interpretation)
-    for a in keys(t)
-        if !t[a].observed
-            t[a].interpretation = i
-        end
-    end
-end
-
-function replay(f :: F, t :: Trace, params...) where F <: Function
+function replay(f :: F, t :: Trace) where F <: Function
     t_new = deepcopy(t)
     interpret_latent!(t_new, REPLAYED)
-    r = f(t_new, params...)
-    interpret_latent!(t_new, NONSTANDARD)
-    (r, t_new)
+    g(params...) = f(t_new, params...)
+    (t_new, g)
 end
 
-export replay
+function block(f :: F, t :: Trace, addresses) where F <: Function
+    t_new = deepcopy(t)
+    for a in addresses
+        t_new[a].interpretation = BLOCKED
+    end
+    g(params...) = f(t_new, params...)
+    (t_new, g)
+end
+
+block(f :: F, t :: Trace) where F <: Function = block(f, t, keys(t))
+
+export block, replay

@@ -5,12 +5,14 @@ struct Nonstandard <: Interpretation end
 struct Standard <: Interpretation end
 struct Replayed <: Interpretation end
 struct Conditioned <: Interpretation end 
+struct Blocked <: Interpretation end
 struct Deterministic <: Interpretation end
 struct Proposed <: Interpretation end
 
 const NONSTANDARD = Nonstandard()
 const STANDARD = Standard()
 const REPLAYED = Replayed()
+const BLOCKED = Blocked()
 const CONDITIONED = Conditioned()
 const DETERMINISTIC = Deterministic()
 const PROPOSED = Proposed()
@@ -25,17 +27,18 @@ mutable struct Node{A, D, T, P}
     pa :: Array{Node, 1}
     ch :: Array{Node, 1}
     interpretation :: Interpretation
+    last_interpretation :: Interpretation
 end
 
 function node(T :: DataType, address :: A, dist :: D, is_obs :: Bool, i :: Interpretation) where {A, D}
-    Node{A, D, T, Float64}(address, dist, nothing, 0.0, 0.0, is_obs, Array{Node, 1}(), Array{Node, 1}(), i)
+    Node{A, D, T, Float64}(address, dist, nothing, 0.0, 0.0, is_obs, Array{Node, 1}(), Array{Node, 1}(), i, i)
 end
 
 function node(value, address :: A, dist :: D, is_obs :: Bool, i :: Interpretation) where {A, D}
     T = typeof(value)
     lp = logpdf.(dist, value)
     P = typeof(lp)
-    Node{A, D, T, P}(address, dist, value, lp, sum(lp), is_obs, Array{Node, 1}(), Array{Node, 1}(), i)
+    Node{A, D, T, P}(address, dist, value, lp, sum(lp), is_obs, Array{Node, 1}(), Array{Node, 1}(), i, i)
 end
 
 mutable struct Trace
@@ -49,6 +52,14 @@ Base.getindex(t :: Trace, k) = t.trace[k]
 Base.values(t :: Trace) = values(t.trace)
 Base.keys(t :: Trace) = keys(t.trace)
 Base.length(t :: Trace) = length(t.trace)
+
+function interpret_latent!(t :: Trace, i :: Interpretation)
+    for a in keys(t)
+        if !t[a].observed
+            t[a].interpretation = i
+        end
+    end
+end
 
 function logprob(t :: Trace)
     l = 0.0
@@ -98,14 +109,28 @@ end
 
 function sample(t :: Trace, a, d, i :: Replayed; pa = ())
     if a in keys(t)
+        last_i = t[a].last_interpretation
         n = node(t[a].value, a, d, false, i)
         t[a] = n
         connect_pa_ch!(t, pa, a)
-        t[a].value
+        r = t[a].value
+        t[a].interpretation = last_i
     else
-        # sample spaces of different dimensionality
-        sample(t, a, d, NONSTANDARD; pa = pa)
+        r = sample(t, a, d, NONSTANDARD; pa = pa)
     end
+    r
+end
+
+function sample(t :: Trace, a, d, i :: Blocked; pa = ())
+    s = rand(d)
+    delete!(t.trace, a)
+    s
+end
+
+function sample(t :: Trace, a, d, params, i :: Blocked; pa = ())
+    s = rand(d, params...)
+    delete!(t.trace, a)
+    s
 end
 
 function sample(t :: Trace, a, d, params, i :: Replayed; pa = ())
@@ -184,4 +209,5 @@ end
 
 export Node, node, Trace, trace, logprob, logprob!, sample, observe, loglikelihood, prior
 export node_info, graph, transform
+export Nonstandard, Standard, Replayed, Conditioned, Deterministic
 export NONSTANDARD, STANDARD, REPLAYED, CONDITIONED, DETERMINISTIC
