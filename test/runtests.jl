@@ -255,6 +255,7 @@ end
 
     @info "inferred E[loc] = $(mean(locs[1000:end]))"
     @info "inferred E[scale] = $(mean(scales[1000:end]))"
+    @info "approximate p(x) = sum_z p(x|z) = $(mean(lls[1000:end]))"
 end
 
 function loc_proposal(old_t :: Trace, new_t :: Trace, data)
@@ -284,4 +285,5 @@ end
 
     @info "inferred E[loc] = $(mean(locs[1000:end]))"
     @info "inferred E[scale] = $(mean(scales[1000:end]))"
+    @info "approximate p(x) = sum_z p(x|z) = $(mean(lls[1000:end]))"
 end
