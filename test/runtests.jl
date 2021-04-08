@@ -1,6 +1,6 @@
 using Test
 using Logging
-using Distributions: Normal, Poisson, Gamma, LogNormal, Bernoulli
+using Distributions: Normal, Poisson, Gamma, LogNormal, Bernoulli, truncated
 using StatsBase: mean, std
 using PrettyPrint: pprintln
 using Plots
@@ -239,22 +239,49 @@ end
     data = randn(100) .+ 4.0
     t = trace()
     wider_normal_model(t, data)
+    @info "True loc = 4.0"
+    @info "True std = 1.0"
     
     locs = []
     scales = []
     lls = []
 
-    for i in 1:10000
+    for i in 1:2500
         t = mh_step(t, wider_normal_model; params = (data,))
         push!(locs, t[:loc].value)
         push!(scales, t[:scale].value)
         push!(lls, loglikelihood(t))
     end
-    
-    p = plot()
-    plot!(p, locs)
-    savefig(p, joinpath(@__DIR__, "..", "_plots", "test_loc.png"))
-    p = plot()
-    plot!(p, scales)
-    savefig(p, joinpath(@__DIR__, "..", "_plots", "test_scale.png"))
+
+    @info "inferred E[loc] = $(mean(locs[1000:end]))"
+    @info "inferred E[scale] = $(mean(scales[1000:end]))"
+end
+
+function loc_proposal(old_t :: Trace, new_t :: Trace, data)
+    propose(new_t, :loc, Normal(old_t[:loc].value, 0.25))
+end
+
+function scale_proposal(old_t :: Trace, new_t :: Trace, data)
+    propose(new_t, :scale, truncated(Normal(old_t[:scale].value, 0.25), 0.0, Inf))
+end
+
+@testset "general metropolis proposal 1" begin
+    data = randn(100) .+ 4.0
+    t = trace()
+    wider_normal_model(t, data)
+
+    locs = []
+    scales = []
+    lls = []
+
+    for i in 1:2500
+        t = mh_step(t, wider_normal_model, loc_proposal; params = (data,))
+        t = mh_step(t, wider_normal_model, scale_proposal; params = (data,))
+        push!(locs, t[:loc].value)
+        push!(scales, t[:scale].value)
+        push!(lls, loglikelihood(t))
+    end
+
+    @info "inferred E[loc] = $(mean(locs[1000:end]))"
+    @info "inferred E[scale] = $(mean(scales[1000:end]))"
 end
