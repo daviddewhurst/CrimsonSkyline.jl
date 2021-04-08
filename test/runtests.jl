@@ -265,7 +265,7 @@ function scale_proposal(old_t :: Trace, new_t :: Trace, data)
     propose(new_t, :scale, truncated(Normal(old_t[:scale].value, 0.25), 0.0, Inf))
 end
 
-@testset "general metropolis proposal 1" begin
+@testset "general metropolis proposal 1!" begin
     data = randn(100) .+ 4.0
     t = trace()
     wider_normal_model(t, data)
