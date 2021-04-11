@@ -1,11 +1,13 @@
 using Test
 using Logging
-using Distributions: Normal, Poisson, Gamma, LogNormal, Bernoulli, truncated
+using Distributions: Normal, Poisson, Gamma, LogNormal, Bernoulli, Geometric, truncated
 using StatsBase: mean, std
 using PrettyPrint: pprintln
-using Plots
+using Random
 
 using CrimsonSkyline
+
+Random.seed!(2021)
 
 @testset "node construction" begin 
     dist = Normal()
@@ -258,15 +260,10 @@ end
     @info "approximate p(x) = sum_z p(x|z) = $(mean(lls[1000:end]))"
 end
 
-function loc_proposal(old_t :: Trace, new_t :: Trace, data)
-    propose(new_t, :loc, Normal(old_t[:loc].value, 0.25))
-end
+loc_proposal(old_t :: Trace, new_t :: Trace, data) = propose(new_t, :loc, Normal(old_t[:loc].value, 0.25))
+scale_proposal(old_t :: Trace, new_t :: Trace, data) = propose(new_t, :scale, truncated(Normal(old_t[:scale].value, 0.25), 0.0, Inf))
 
-function scale_proposal(old_t :: Trace, new_t :: Trace, data)
-    propose(new_t, :scale, truncated(Normal(old_t[:scale].value, 0.25), 0.0, Inf))
-end
-
-@testset "general metropolis proposal 1!" begin
+@testset "general metropolis proposal 1" begin
     data = randn(100) .+ 4.0
     t = trace()
     wider_normal_model(t, data)
@@ -286,4 +283,53 @@ end
     @info "inferred E[loc] = $(mean(locs[1000:end]))"
     @info "inferred E[scale] = $(mean(scales[1000:end]))"
     @info "approximate p(x) = sum_z p(x|z) = $(mean(lls[1000:end]))"
+end
+
+function random_sum_model(t :: Trace, data)
+    n = sample(t, :n, Geometric(0.1))
+    loc = 0.0
+    for i in 1:(n + 1)
+        loc += sample(t, (:loc, i), Normal())
+    end
+    obs = Array{Float64, 1}()
+    for j in 1:length(data)
+        o = observe(t, (:data, j), Normal(loc, 1.0), data[j])
+        push!(obs, o)
+    end
+    obs
+end
+
+function random_n_proposal(old_trace, new_trace, params...)
+    old_n = float(old_trace[:n].value)
+    if old_n > 0
+        propose(new_trace, :n, Poisson(old_n))
+    else
+        propose(new_trace, :n, Poisson(1.0))
+    end
+end
+
+function gen_loc_proposal(old_trace, new_trace, ix, params...)
+    propose(new_trace, (:loc, ix), Normal(old_trace[(:loc, ix)].value, 0.25))
+end
+
+@testset "generate metropolis proposal 2" begin
+    t = trace()
+    data = random_sum_model(t, fill(nothing, 25))
+    @info "True :n = $(t[:n].value)"
+    random_sum_model(t, data)
+    
+    ns = []
+    loc_proposals = [
+        (o, n, params...) -> gen_loc_proposal(o, n, i, params...) for i in 1:100
+    ]
+
+    for i in 1:5000
+        t = mh_step(t, random_sum_model, random_n_proposal; params=(data,))
+        for j in 1:(t[:n].value + 1)
+            t = mh_step(t, random_sum_model, loc_proposals[j]; params=(data,))
+        end
+        push!(ns, t[:n].value)
+    end
+
+    @info "Posterior E[:n] = $(mean(ns[1000:end]))"
 end

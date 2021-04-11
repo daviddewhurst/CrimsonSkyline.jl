@@ -1,3 +1,19 @@
+@doc raw"""
+    function node_info(t :: Trace, a)
+
+Returns an `OrderedDict` containing all information about the node `t[a]` required
+for graph-based inference algorithms.
+
+Keys include:
++ `"address"`: the address of the node in the trace
++ `"dist"`: the probability distribution associated with the address
++ `"observed"`: whether or not the value associated with the node was observed
++ `"interpretation"`: the interpretation of the node in the trace
++ `"data"` (optional): if the value associated with the node was observed, the value associated
+    with the node. 
++ `"pa"`: the parents of the node in the trace. Note that it is necessary to pass parent addresses
+    to one of the various sample methods in order to build a nontrivial `GraphIR`.
+"""
 function node_info(t :: Trace, a)
     n = t[a]
     info = OrderedDict(
@@ -15,11 +31,26 @@ function node_info(t :: Trace, a)
     (info, ch)
 end
 
+@doc raw"""
+    struct GraphIR 
+        info :: OrderedDict{Any, OrderedDict}
+        graph :: OrderedDict
+    end
+
+An intermediate representation of a single trace as a directed acyclic graph (DAG) that 
+stores node information in `info` and DAG structure in `graph`. The keys and values of `graph`
+are addresses, while `info` is a mapping from addresses to results from calls to `node_info`. 
+"""
 struct GraphIR 
     info :: OrderedDict{Any, OrderedDict}
     graph :: OrderedDict
 end
 
+@doc raw"""
+    function graph_ir(t :: Trace)
+
+Outer constructor for `GraphIR`
+"""
 function graph_ir(t :: Trace)
     g = OrderedDict()
     info = OrderedDict()
@@ -31,12 +62,26 @@ function graph_ir(t :: Trace)
     GraphIR(info, g)
 end
 
+@doc raw"""
+    struct Factor 
+        info :: OrderedDict{Any, OrderedDict}
+        node_to_factor :: OrderedDict
+        factor_to_node :: OrderedDict
+    end
+
+A representation of a factor graph. 
+"""
 struct Factor 
     info :: OrderedDict{Any, OrderedDict}
     node_to_factor :: OrderedDict
     factor_to_node :: OrderedDict
 end
 
+@doc raw"""
+    function factor(g :: GraphIR)
+
+Outer constructor for a factor graph from an intermediate DAG representation. 
+"""
 function factor(g :: GraphIR)
     collected_g = reverse(collect(g.info))
     factors = OrderedDict()
@@ -55,6 +100,11 @@ function factor(g :: GraphIR)
     end
     Factor(g.info, nodes, factors)
 end
+@doc raw"""
+    factor(t :: Trace)
+
+Outer constructor for a factor graph from a trace. 
+"""
 factor(t :: Trace) = factor(graph_ir(t))
 
 

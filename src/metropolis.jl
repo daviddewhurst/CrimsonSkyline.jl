@@ -12,11 +12,22 @@ const ASYMMETRIC = Asymmetric()
 # e.g., right now new trace is made in mh, but is this always true?
 
 sample(t :: Trace, a, d, i :: Proposed) = sample(t, a, d, NONSTANDARD)
+
+@doc raw"""
+    propose(t :: Trace, a, d)
+
+Propose a value for the address `a` in trace `t` from the distribution `d`.
+"""
 propose(t :: Trace, a, d) = sample(t, a, d, PROPOSED)
 symmetric(f :: F) where F <: Function = false
 
 ### independent prior metropolis stuff ###
 
+@doc raw"""
+    function loglatent(t :: Trace)
+
+Computes the joint log probability of all latent variables in a trace, ``\log p(t) - \ell(t)``.
+"""
 function loglatent(t :: Trace)
     l = 0.0
     for v in values(t)
@@ -27,12 +38,27 @@ function loglatent(t :: Trace)
     l
 end
 
+@doc raw"""
+    function log_acceptance_ratio(t :: Trace, t_proposed :: Trace, p :: Prior)
+
+Computes the log acceptance ratio of a Metropolis step when using the independent prior proposal 
+algorithm:
+
+``
+\log \alpha = \ell(t_{\text{proposed}}) - \ell(t_{\text{original}})
+``
+"""
 function log_acceptance_ratio(t :: Trace, t_proposed :: Trace, p :: Prior)
     log_proposal_lik = loglikelihood(t_proposed)
     log_orig_lik = loglikelihood(t)
     log_proposal_lik - log_orig_lik
 end
 
+@doc raw"""
+    function accept(t :: Trace, new_t :: Trace, log_a :: Float64)
+
+Stochastic function that either returns `new_t` if accepted or returns `t` if not accepted.
+"""
 function accept(t :: Trace, new_t :: Trace, log_a :: Float64)
     if log(rand()) < log_a
         new_t
@@ -41,6 +67,14 @@ function accept(t :: Trace, new_t :: Trace, log_a :: Float64)
     end
 end
 
+@doc raw"""
+    function mh_step(t :: Trace, f :: F; params = ()) where F <: Function 
+
+An independent prior sample Metropolis step.
+
+Given a trace `t` and stochatic function `f` depending on `params...`, generates proposals 
+from prior draws and accepts based on the likelihood ratio.
+"""
 function mh_step(t :: Trace, f :: F; params = ()) where F <: Function 
     new_t = trace()
     f(new_t, params...)
@@ -50,6 +84,14 @@ end
 
 ### general metropolis stuff ###
 
+@doc raw"""
+    function logprob(t0 :: Trace, t1 :: Trace)  
+
+Computes the proposal log probability ``q(t_1 | t_0)``.
+
+This expression has two parts: log probability that is generated at the proposed site(s), and 
+log probability that is generated at the sites that are present in `t1` but not in `t0`. 
+"""
 function logprob(t0 :: Trace, t1 :: Trace)
     log_q = 0.0
     kt0 = keys(t0)
@@ -69,11 +111,40 @@ function logprob(t0 :: Trace, t1 :: Trace)
     log_q
 end
 
+@doc raw"""
+    function copy_common!(old_t :: Trace, new_t :: Trace)
+
+Copies nodes from `old_t` into `new_t` for all addresses in the intersection
+of their address sets. 
+"""
+function copy_common!(old_t :: Trace, new_t :: Trace)
+    common_addresses = intersect(keys(old_t), keys(new_t))
+    for a in common_addresses
+        new_t[a] = old_t[a]
+    end
+    new_t
+end
+
 # proposal signature
 # function q(old_trace :: Trace, new_trace :: Trace, params...)
 
+@doc raw"""
+    function mh_step(t :: Trace, f :: F1, q :: F2; params = ()) where {F1 <: Function, F2 <: Function}
+
+A generic Metropolis step using an arbitrary proposal kernel. 
+
+Given a trace `t`, a stochastic function `f` with signature `f(t :: Trace, params...)` a stochastic function 
+`q` with signature `q(old_trace :: Trace, new_trace :: Trace, params...)`, generates a proposal from `q` and 
+accepts based on the log acceptance probability:
+
+``
+\log \alpha = \log p(t_{\text{new}}) - \log q(t_{\text{new}}|t_{\text{old}}) - [\log p(t_{\text{old}}) - \log q(t_{\text{old}} | t_{\text{new}})].
+``
+"""
 function mh_step(t :: Trace, f :: F1, q :: F2; params = ()) where {F1 <: Function, F2 <: Function}
-    new_t = deepcopy(t)
+    new_t = trace()
+    f(new_t, params...)
+    copy_common!(t, new_t)
     logprob!(t)
     q(t, new_t, params...) # propose into the trace
     new_t, g = replay(f, new_t)
