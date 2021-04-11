@@ -3,7 +3,7 @@ Author: David Rushing Dewhurst
 
 Copyright: David Rushing Dewhurst and Charles River Analytics Inc., 2021 - present
 
-All rights reserved
+Released under the GNU GPL v3 license.
 """
 
 module CrimsonSkyline
