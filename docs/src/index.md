@@ -152,6 +152,19 @@ Modules = [CrimsonSkyline]
 Pages = ["metropolis.jl"]
 ```
 
+## fusion
+
+Methods to perform semi-analytical simplification and inference. 
+
+### fusion/distributions
+A collection of distributions that aren't in `Distributions.jl`. These distributions are useful in their own right, but are 
+also arise when fusing pairs or triples of known distributions.
+
+```@autodocs
+Modules = [CrimsonSkyline]
+Pages = ["fusion/distributions.jl"]
+```
+
 ## Index
 ```@index
 ```

@@ -14,9 +14,14 @@ using PrettyPrint: pprintln
 using StatsBase
 
 include("util.jl")
+include("fusion/distributions.jl")
+include("fusion/tabulated.jl")
+
 include("cpt.jl")
 include("trace.jl")
+
 include("graph.jl")
+
 include("effects.jl")
 include("importance.jl")
 include("metropolis.jl")
