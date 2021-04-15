@@ -88,7 +88,10 @@ function factor(g :: GraphIR)
     nodes = OrderedDict(addr => Set() for addr in keys(g.info))
     i = 0
     for (addr, node) in collected_g
-        f = Set([node["address"]])
+        types = [typeof(p) for p in node["pa"]]
+        push!(types, typeof(node["address"]))
+        f = Set{Union{types...}}()
+        union!(f, (node["address"],))
         union!(f, [p for p in node["pa"]])
         factors[i] = f
         i += 1
