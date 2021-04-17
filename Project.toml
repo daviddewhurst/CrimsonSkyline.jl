@@ -4,12 +4,11 @@ authors = ["daviddewhurst <drd@davidrushingdewhurst.com>"]
 version = "0.1.0"
 
 [deps]
-CSV = "336ed68f-0bac-5ca0-87d4-7b16caf5d00b"
-DataFrames = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
 IJulia = "7073ff75-c697-5162-941a-fcdaad2a7d2a"
+JuliaDB = "a93385a2-3734-596a-9a66-3cfbb77141e6"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 PrettyPrint = "8162dcfd-2161-5ef2-ae6c-7681170c5f98"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"

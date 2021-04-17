@@ -12,8 +12,7 @@ using DataStructures
 using Distributions
 using PrettyPrint: pprintln
 using StatsBase
-using DataFrames
-using CSV
+using JuliaDB
 
 include("util.jl")
 include("fusion/distributions.jl")
