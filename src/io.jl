@@ -1,3 +1,8 @@
+@doc raw"""
+    function to_table(t :: Trace)
+
+Turns a trace into a juliadb table. Does not store parent / child relationships.
+"""
 function to_table(t :: Trace)
     pk = 1:length(t.trace)
     v = collect(values(t))
@@ -25,14 +30,23 @@ function to_table(t :: Trace)
     )
 end
 
+@doc raw"""
+    function save(t :: Trace, f)
 
+Saves a trace to disk as a serialized juliadb table at the filepath `f`.
+"""
 function save(t :: Trace, f)
     trace_table = to_table(t)
     JuliaDB.save(trace_table, f)
     f
 end
 
-function load(f)
+@doc raw"""
+    function load(f) :: Trace
+        
+Loads a serialized juliadb table from file `f` and converts it into a trace.
+"""
+function load(f) :: Trace
     trace_table = JuliaDB.load(f)
     t = trace()
     for ix in 1:length(trace_table)
