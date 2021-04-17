@@ -18,6 +18,25 @@ Modules = [CrimsonSkyline]
 Pages = ["trace.jl"]
 ```
 
+## io
+
+Saving and loading traces is possible using the `save` and `load` functions. This
+functionality depends on `JuliaDB`. Example usage (`fn` is a stochastic function):
+
+```
+t = trace()
+data = randn(2)
+fn(t, data)
+fname = joinpath(@__DIR__, "out", "my_file.jdb")
+f = save(t, fname)
+identical_t = load(f)
+```
+
+```@autodocs
+Modules = [CrimsonSkyline]
+Pages = ["io.jl"]
+```
+
 ## effects
 A library of functions that change the interpretation of some or all nodes in a trace.
 ```@autodocs
