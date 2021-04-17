@@ -21,4 +21,11 @@ __pairs__ = Dict(
     (Gamma{Float64}, Exponential{Float64}) => gamma_exponential_lomax
 )
 
-fuse_pair(a, b) = __pairs__[typeof(a), typeof(b)](a, b)
+function fuse_pair(a, b)
+    p = (typeof(a), typeof(b))
+    if p in keys(__pairs__)
+        __pairs__[p](a, b)
+    else
+        nothing
+    end
+end

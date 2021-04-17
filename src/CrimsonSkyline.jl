@@ -12,6 +12,8 @@ using DataStructures
 using Distributions
 using PrettyPrint: pprintln
 using StatsBase
+using DataFrames
+using CSV
 
 include("util.jl")
 include("fusion/distributions.jl")
@@ -25,5 +27,7 @@ include("graph.jl")
 include("effects.jl")
 include("importance.jl")
 include("metropolis.jl")
+
+include("io.jl")
 
 end # module
