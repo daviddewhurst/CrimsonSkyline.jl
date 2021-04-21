@@ -280,7 +280,6 @@ end
     std_loc = std(results, :loc)
     @info "Mean loc = $mean_loc"
     @info "Std loc = $std_loc"
-    exit()
 end
 
 loc_proposal(old_t :: Trace, new_t :: Trace, data) = propose(new_t, :loc, Normal(old_t[:loc].value, 0.25))
