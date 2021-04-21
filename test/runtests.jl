@@ -271,8 +271,21 @@ end
     @info "approximate p(x) = sum_z p(x|z) = $(mean(lls[1000:end]))"
 end
 
+@testset "prior metropolis proposal 2" begin
+    data = randn(10) .+ 4.0
+    @info "True loc = 4.0"
+    @info "True std = 1.0"
+    results = mh(wider_normal_model; params=(data,))
+    mean_loc = mean(results, :loc)
+    std_loc = std(results, :loc)
+    @info "Mean loc = $mean_loc"
+    @info "Std loc = $std_loc"
+    exit()
+end
+
 loc_proposal(old_t :: Trace, new_t :: Trace, data) = propose(new_t, :loc, Normal(old_t[:loc].value, 0.25))
 scale_proposal(old_t :: Trace, new_t :: Trace, data) = propose(new_t, :scale, truncated(Normal(old_t[:scale].value, 0.25), 0.0, Inf))
+
 
 @testset "general metropolis proposal 1" begin
     data = randn(100) .+ 4.0

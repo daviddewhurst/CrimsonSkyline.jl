@@ -8,6 +8,11 @@ const SYMMETRIC = Symmetric()
 const PRIOR = Prior()
 const ASYMMETRIC = Asymmetric()
 
+struct Metropolis <: InferenceType end
+const METROPOLIS = Metropolis()
+
+metropolis_results() = SamplingResults{Metropolis}(METROPOLIS, Array{Float64, 1}(), Array{Any, 1}(), Array{Trace, 1}())
+
 # maybe Proposed will have meaning later, stub out just in case
 # e.g., right now new trace is made in mh, but is this always true?
 
@@ -75,11 +80,36 @@ An independent prior sample Metropolis step.
 Given a trace `t` and stochatic function `f` depending on `params...`, generates proposals 
 from prior draws and accepts based on the likelihood ratio.
 """
-function mh_step(t :: Trace, f :: F; params = ()) where F <: Function 
+function mh_step(t :: Trace, f :: F; params = (), return_val :: Bool = false) where F <: Function 
     new_t = trace()
-    f(new_t, params...)
+    r = f(new_t, params...)
     log_a = log_acceptance_ratio(t, new_t, PRIOR)
-    accept(t, new_t, log_a)
+    a = accept(t, new_t, log_a)
+    if !return_val
+        a
+    else
+        (r, a)
+    end
+end
+
+function mh(f :: F; params = (), burn = 100, thin = 10, num_iterations = 10000) where F <: Function 
+    results = metropolis_results()
+    t = trace()
+    r = f(t, params...)
+    for n in 1:num_iterations
+        r, t = mh_step(t, f; params = params, return_val = true)
+        if (n > burn) && (n % thin == 0)
+            push!(results.return_values, r)
+            push!(results.traces, t)
+            push!(results.log_weights, logprob(t))
+        end
+    end
+    results
+end
+
+function sample(r :: SamplingResults{Metropolis}, k, n :: Int)
+    v = r[k]
+    StatsBase.sample(v, n)
 end
 
 ### general metropolis stuff ###
@@ -156,5 +186,9 @@ function mh_step(t :: Trace, f :: F1, q :: F2; params = ()) where {F1 <: Functio
     accept(t, new_t, log_a)
 end
 
+function mh(f :: F, qs :: A; params = ()) where {F <: Function, A <: AbstractArray}
+    error("Not yet implemented!")
+end
+
 export propose, is_symmetric
-export mh_step
+export mh_step, mh
