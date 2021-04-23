@@ -109,7 +109,11 @@ end
 
 function sample(r :: SamplingResults{Metropolis}, k, n :: Int)
     v = r[k]
-    StatsBase.sample(v, n)
+    if n == 1
+        StatsBase.sample(v)
+    else
+        StatsBase.sample(v, n)
+    end
 end
 
 ### general metropolis stuff ###

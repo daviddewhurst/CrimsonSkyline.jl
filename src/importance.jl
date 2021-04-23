@@ -66,7 +66,11 @@ Draws `n` samples from the empirical marginal posterior at address `k`.
 function sample(r :: SamplingResults{LikelihoodWeighting}, k, n :: Int)
     v = r[k]
     weights = StatsBase.Weights(normalized_weights(r))
-    StatsBase.sample(v, weights, n)
+    if n == 1
+        StatsBase.sample(v, weights)
+    else
+        StatsBase.sample(v, weights, n)
+    end
 end
 
 export LikelihoodWeighting

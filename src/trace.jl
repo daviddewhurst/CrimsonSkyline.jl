@@ -8,6 +8,7 @@ struct Conditioned <: Interpretation end
 struct Blocked <: Interpretation end
 struct Deterministic <: Interpretation end
 struct Proposed <: Interpretation end
+struct Empirical <: Interpretation end
 
 const NONSTANDARD = Nonstandard()
 const STANDARD = Standard()
@@ -16,6 +17,7 @@ const BLOCKED = Blocked()
 const CONDITIONED = Conditioned()
 const DETERMINISTIC = Deterministic()
 const PROPOSED = Proposed()
+const EMPIRICAL = Empirical()
 
 @doc raw"""
     mutable struct Node{A, D, T, P}
@@ -189,6 +191,20 @@ function connect_pa_ch!(t :: Trace, pa, a)
 end
 
 @doc raw"""
+    function sample(t :: Trace, a, d, ii :: Array{Interpretation, 1}; pa = ())
+
+Sequentially apply sample statements with interpretations as given in `ii`. This is 
+used to depth-first traverse the interpretation graph.
+"""
+function sample(t :: Trace, a, d, ii :: Array{Interpretation, 1}; pa = ())
+    local s
+    for i in ii
+        s = sample(t, a, d, i; pa = pa)
+    end
+    s
+end
+
+@doc raw"""
     function sample(t :: Trace, a, d, i :: Nonstandard; pa = ())
 
 Samples from distribution `d` into trace `t` at address `a`.
@@ -253,6 +269,20 @@ from trace `t`, and returns the sampled value.
 function sample(t :: Trace, a, d, params, i :: Blocked; pa = ())
     s = rand(d, params...)
     delete!(t.trace, a)
+    s
+end
+
+@doc raw"""
+    function sample(t :: Trace, a, d, params, ii :: Array{Interpretation, 1}; pa = ())
+
+Sequentially apply sample statements with interpretations as given in `ii`. This is 
+used to depth-first traverse the interpretation graph.
+"""
+function sample(t :: Trace, a, d, params, ii :: Array{Interpretation, 1}; pa = ())
+    local s
+    for i in ii
+        s = sample(t, a, d, params, i; pa = pa)
+    end
     s
 end
 
