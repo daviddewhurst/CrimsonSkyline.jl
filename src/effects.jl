@@ -51,6 +51,25 @@ function replace(t :: Trace, r :: Dict)
 end
 
 @doc raw"""
+    function rewrite(f :: F, t :: Trace, r :: Dict) where F <: Function 
+
+Rewrites the history of the trace to make it appear as if the values in the trace
+were sampled at the addresses in the keys of `r` were sampled from the 
+corresponding distributions in the values of `r`. Returns a function with 
+call signature `g(params...)` that returns `(t :: Trace, rval)`, where `rval` 
+is the return type of `f`. 
+"""
+function rewrite(f :: F, t :: Trace, r :: Dict) where F <: Function 
+    function g(params...)
+        new_t, h = replay(f, t)
+        rval = h(params...)
+        new_t = replace(new_t, r)
+        (new_t, rval)
+    end
+    g
+end
+
+@doc raw"""
     function block(f :: F, t :: Trace, addresses) where F <: Function
 
 Given a stochastic function `f`, a trace `t`, and an iterable of addresses, converts traced
@@ -97,12 +116,10 @@ function update(f :: F, r :: SamplingResults{I}) where {F <: Function, I <: Infe
                 marginals[a] = r[a]
             end
         end
-        new_t, h = replay(f, t)
-        rval = h(params...)
-        new_t = replace(new_t, marginals)
-        (new_t, rval)
+        h = rewrite(f, t, marginals)
+        h(params...)
     end
     g
 end
 
-export block, replay, update, replace
+export block, replay, update, replace, rewrite
