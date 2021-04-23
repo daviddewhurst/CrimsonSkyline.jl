@@ -19,5 +19,7 @@ CrimsonSkyline.jl currently supports two families of inference algorithms:
 
 We might implement more inference algorithms soon.
 
-#### License and copyright
-CrimsonSkyline.jl is released under the GNU GPL v3. Copyright David Rushing Dewhurst and Charles River Analytics Inc., 2021 - present.
+#### License, copyright, and other info
++ CrimsonSkyline.jl is released under the GNU GPL v3.
++ Copyright David Rushing Dewhurst and Charles River Analytics Inc., 2021 - present.
++ Mirrored at [github.com/daviddewhurst/CrimsonSkyline.jl](github.com/daviddewhurst/CrimsonSkyline.jl)
