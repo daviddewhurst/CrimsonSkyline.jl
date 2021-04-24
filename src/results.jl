@@ -10,7 +10,7 @@ abstract type InferenceType end
     end
 
 Wrapper for results of sampling. Implements the following methods 
-from `Base`: `getindex`, `length`. 
+from `Base`: `getindex`, `length`, `keys`.
 Intepretation of log weights is dependent on `I`.
 """
 struct SamplingResults{I<:InferenceType}
@@ -18,6 +18,15 @@ struct SamplingResults{I<:InferenceType}
     log_weights :: Array{Float64, 1}
     return_values :: Array{Any, 1}
     traces :: Array{Trace, 1}
+end
+function Base.keys(r :: SamplingResults{I}) where I <: InferenceType
+    k = Set{Any}()
+    for t in r.traces
+        for a in keys(t)
+            union!(k, (a,))
+        end
+    end
+    k
 end
 Base.getindex(r :: SamplingResults{I}, k) where I <: InferenceType = [t.trace[k].value for t in r.traces]
 Base.getindex(r :: SamplingResults{I}) where I <: InferenceType = r.return_values

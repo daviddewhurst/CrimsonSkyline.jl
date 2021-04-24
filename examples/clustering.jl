@@ -49,8 +49,10 @@ end
 function main()
     @info "Open-universe clustering inference"
     D = 4
-    data1 = rand(D, 5)
-    data2 = rand(D, 12) .+ 6
+    n1 = 5
+    n2 = 12
+    data1 = rand(D, n1)
+    data2 = rand(D, n2) .+ 6
     data = hcat(data1, data2)
     @info "True number of clusters is 2"
     # pretend we don't know dgp, bias it to be higher than ground truth

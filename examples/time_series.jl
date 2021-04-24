@@ -2,7 +2,7 @@ import Pkg
 Pkg.activate("..")
 
 using CrimsonSkyline
-using Distributions: Normal, Gamma
+using Distributions: Normal, Gamma, LogNormal
 using Logging
 using StatsBase: mean, std
 using Random: seed!
@@ -21,6 +21,18 @@ function random_walk(t :: Trace, data :: Array{Float64, 2})
     end
 end
 
+function global_trend(t :: Trace, data :: Array{Float64, 2})
+    α = sample(t, :α, Normal())
+    β = sample(t, :β, Normal())
+    σ = sample(t, :σ, LogNormal())
+    shape = size(data)
+    for n in 1:shape[1]
+        for t_ix in 1:shape[2]
+            observe(t, (:data, n, t_ix), Normal(α + β * t_ix, σ), data[n, t_ix])
+        end
+    end
+end
+
 function main()
     n = 3
     t = 20
@@ -34,6 +46,25 @@ function main()
     @time results = mh(random_walk; params=(data,), burn=1000, thin=50, num_iterations=50000)
     @info "Estimated loc = ($(mean(results, :loc)) ± $(2.0 * std(results, :loc)))"
     @info "Estimated scale = ($(mean(results, :scale)) ± $(2.0 * std(results, :scale)))"
+
+    @info begin
+        """
+        Time series model comparison
+        Comparing evidence for random walk model vs global trend
+        """
+    end
+    nsamples = 5000
+    rw_results = likelihood_weighting(random_walk, data; nsamples = nsamples)
+    gt_results = likelihood_weighting(global_trend, data; nsamples = nsamples)
+    log_evidence_rw = log_evidence(rw_results)
+    log_evidence_gt = log_evidence(gt_results)
+    @info begin 
+        """
+        log p(x | random walk) = $log_evidence_rw
+        log p(x | global trend) = $log_evidence_gt
+        """
+    end
+
 end
 
 main()
