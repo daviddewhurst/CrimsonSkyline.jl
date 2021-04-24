@@ -37,25 +37,29 @@ function program!(t :: Trace, n :: Int)
     loc = sample(t, :loc, Normal())
     scale = sample(t, :scale, Gamma(2.0, 2.0))
     log_rate = sample(t, :log_rate, Normal(loc, scale))
-    data = sample(t, :data, Poisson(exp(log_rate)), (n,))
-    data
+    for i in 1:n
+        sample(t, (:data, i), Poisson(exp(log_rate)))
+    end
 end
 
 @testset "tracing program" begin
     t = trace()
     n_datapoints = 10
-    values = program!(t, n_datapoints)
+    program!(t, n_datapoints)
     logprob!(t)
     @info "Joint density of execution = $(t.logprob_sum)"
     @test :loc in keys(t)
-    @test :data in keys(t)
+    @test (:data, 3) in keys(t)
 end
 
 function program2!(t :: Trace, data)
     loc = sample(t, :loc, Normal())
     scale = sample(t, :scale, Gamma(2.0, 2.0))
     log_rate = sample(t, :log_rate, Normal(loc, scale))
-    obs = observe(t, :data, Poisson(exp(log_rate)), data)
+    obs = Array{Int64, 1}(undef, length(data))
+    for (i, d) in enumerate(data)
+        obs[i] = observe(t, (:data, i), Poisson(exp(log_rate)), d)
+    end
     obs
 end
 

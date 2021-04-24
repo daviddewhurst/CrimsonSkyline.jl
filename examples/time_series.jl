@@ -24,15 +24,16 @@ end
 function main()
     n = 3
     t = 20
+
+    @info "Random walk inference"
     loc = 2.0
     scale = 1.5
     noise = rand(n, t)
     data = cumsum(loc .+ scale .* noise, dims=2)
-
     @info "True loc = $loc, true scale = $scale"
-    results = mh(random_walk; params=(data,), burn=1000, thin=50, num_iterations=50000)
-    @info "Estimated 95% CI loc = ($(mean(results, :loc)) ± $(2.0 * std(results, :loc)))"
-    @info "Estimated 95% CI scale = ($(mean(results, :scale)) ± $(2.0 * std(results, :scale)))"
+    @time results = mh(random_walk; params=(data,), burn=1000, thin=50, num_iterations=50000)
+    @info "Estimated loc = ($(mean(results, :loc)) ± $(2.0 * std(results, :loc)))"
+    @info "Estimated scale = ($(mean(results, :scale)) ± $(2.0 * std(results, :scale)))"
 end
 
 main()

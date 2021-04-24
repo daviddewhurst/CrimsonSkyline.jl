@@ -22,4 +22,5 @@ We might implement more inference algorithms soon.
 #### License, copyright, and other info
 + CrimsonSkyline.jl is released under the GNU GPL v3.
 + Copyright David Rushing Dewhurst and Charles River Analytics Inc., 2021 - present.
++ Development repository is at [gitlab.com/daviddewhurst/CrimsonSkyline.jl](gitlab.com/daviddewhurst/CrimsonSkyline.jl)
 + Mirrored at [github.com/daviddewhurst/CrimsonSkyline.jl](github.com/daviddewhurst/CrimsonSkyline.jl)

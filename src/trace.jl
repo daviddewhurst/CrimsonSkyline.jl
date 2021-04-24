@@ -56,18 +56,6 @@ function node(T :: DataType, address :: A, dist :: D, is_obs :: Bool, i :: Inter
 end
 
 @doc raw"""
-    function node(value :: I, address :: A, dist :: D, is_obs :: Bool, i :: Interpretation) where {A, D, I <: AbstractArray}
-
-Outer constructor for `Node` where data is passed during construction. Data type is inferred from the passed data.
-"""
-function node(value :: I, address :: A, dist :: D, is_obs :: Bool, i :: Interpretation) where {A, D, I <: AbstractArray}
-    T = typeof(value)
-    lp = logpdf.(dist, value)
-    P = typeof(lp)
-    Node{A, D, T, P}(address, dist, value, lp, sum(lp), is_obs, Array{Node, 1}(), Array{Node, 1}(), i, i)
-end
-
-@doc raw"""
     function node(value, address :: A, dist :: D, is_obs :: Bool, i :: Interpretation) where {A, D}
 
 Outer constructor for `Node` where data is passed during construction. Data type is inferred from the passed data.
