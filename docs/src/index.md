@@ -171,6 +171,12 @@ Modules = [CrimsonSkyline]
 Pages = ["metropolis.jl"]
 ```
 
+## results
+```@autodocs
+Modules = [CrimsonSkyline]
+Pages = ["results.jl"]
+```
+
 ## fusion
 
 Methods to perform semi-analytical simplification and inference. 

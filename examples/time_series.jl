@@ -34,11 +34,11 @@ function global_trend(t :: Trace, data :: Array{Float64, 2})
 end
 
 function main()
-    n = 3
+    n = 10
     t = 20
 
     @info "Random walk inference"
-    loc = 2.0
+    loc = 1.0
     scale = 1.5
     noise = rand(n, t)
     data = cumsum(loc .+ scale .* noise, dims=2)
@@ -50,7 +50,7 @@ function main()
     @info begin
         """
         Time series model comparison
-        Comparing evidence for random walk model vs global trend
+        Comparing (prior) evidence for random walk model vs global trend
         """
     end
     nsamples = 5000
@@ -60,10 +60,14 @@ function main()
     log_evidence_gt = log_evidence(gt_results)
     @info begin 
         """
-        log p(x | random walk) = $log_evidence_rw
-        log p(x | global trend) = $log_evidence_gt
+        log p(x | random walk) ≈ $log_evidence_rw
+        log p(x | global trend) ≈ $log_evidence_gt
         """
     end
+    @info "Comparing model quality using AIC"
+    aic_rw = aic(rw_results)
+    aic_gt = aic(gt_results)
+    @info "AIC(random walk) ≈ $aic_rw, AIC(global trend) ≈ $aic_gt"
 
 end
 

@@ -69,4 +69,28 @@ function sample(t :: Trace, a, d, i :: Empirical; pa = ())
     t[a].value
 end
 
-export SamplingResults, sample
+@doc raw"""
+    function aic(r :: SamplingResults{I}) where I <: InferenceType
+
+Computes an empirical estimate of the Akaike Information Criterion from a `SamplingResults`.
+The formula is 
+    
+```math
+\text{AIC}(r)/2 = \min_{t \in \text{traces}(r)}|\text{params}(t)| - \hat\ell(t),
+```
+    
+where ``|\text{params}(t)|`` is the number of non-observed and non-deterministic sample nodes and
+``\hat\ell(t)`` is the empirical maximum likelihood.
+"""
+function aic(r :: SamplingResults{I}) where I <: InferenceType
+    min_aic = Inf
+    for t in r.traces
+        a = aic(t)
+        if a < min_aic
+            min_aic = a
+        end
+    end
+    min_aic
+end
+
+export SamplingResults, sample, aic

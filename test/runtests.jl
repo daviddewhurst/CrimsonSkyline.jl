@@ -52,6 +52,18 @@ end
     @test (:data, 3) in keys(t)
 end
 
+@testset "condition 1" begin
+    t = trace()
+    n_datapoints = 2
+    program!(t, n_datapoints)
+    @test t[(:data, 1)].interpretation == NONSTANDARD
+    cp = condition(program!, Dict((:data, 1) => 4))
+    t, _ = cp(t, n_datapoints)
+    @test t[(:data, 1)].interpretation == STANDARD
+    @test t[(:data, 1)].value == 4
+    @info "(:data, 1) = $(t[(:data, 1)])"
+end
+
 function program2!(t :: Trace, data)
     loc = sample(t, :loc, Normal())
     scale = sample(t, :scale, Gamma(2.0, 2.0))

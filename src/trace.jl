@@ -111,7 +111,9 @@ end
 
 Computes and returns the joint log probability of the trace:
 
-``\log p(t) = \sum_{a \in \text{keys}(t)}\log p(t[a])``
+```math
+\log p(t) = \sum_{a \in \text{keys}(t)}\log p(t[a])
+```
 """
 function logprob(t :: Trace)
     l = 0.0
@@ -136,11 +138,11 @@ end
 
 Computes and returns the log likelihood of the observed data under the model:
 
-``
+```math
 \ell(t) = 
 \sum_{a:\ [a \in \text{keys}(t)] \wedge [\text{interpretation}(a) = \text{Standard}]} 
 \log p(t[a])
-``
+```
 """
 function loglikelihood(t :: Trace)
     l = 0.0
@@ -150,6 +152,32 @@ function loglikelihood(t :: Trace)
         end
     end
     l
+end
+
+@doc raw"""
+    function aic(t :: Trace)
+
+Computes the Akaike Information Criterion for a *single trace* (thus replacing the definition) with 
+"maximum likelihood" by one with "likelihood". The formula is 
+
+```math
+\text{AIC}(t)/2 = |\text{params}(t)| - \ell(t),
+```
+
+where ``\text{params}(t)|`` is the number of non-observed and non-deterministic sample nodes.
+"""
+function aic(t :: Trace)
+    ll = 0.0
+    k = 0
+    for v in values(t)
+        if !(v.observed || v.interpretation == DETERMINISTIC)
+            k += 1
+        end
+        if v.observed 
+            ll += v.logprob_sum
+        end
+    end
+    2.0 * (k - ll)
 end
 
 @doc raw"""
@@ -322,6 +350,22 @@ function sample(t :: Trace, a, d, s, i :: Standard; pa = ())
 end
 
 @doc raw"""
+    function sample(t :: Trace, a, d, i :: Standard; pa = ())   
+
+Scores an observed value against the distribution `d`, storing the value in trace `t` at 
+address `a` and optionally adds nodes corresponding to the addresses in `pa` as parent nodes.
+
+This method is used by the `condition` effect. It will probably not be used by most 
+users.
+"""
+function sample(t :: Trace, a, d, i :: Standard; pa = ())
+    n = node(t[a].value, a, d, true, i)
+    t[a] = n
+    connect_pa_ch!(t, pa, a)
+    t[a].value
+end
+
+@doc raw"""
     function sample(t :: Trace, a, f, v, i :: Deterministic; pa = ())
 
 Creates a deterministic node mapping the tuple of data `v` through function `f`, 
@@ -418,7 +462,7 @@ function prior(f :: F, addresses :: Union{AbstractArray, Tuple}, params...; nsam
 end
 
 
-export Node, node, Trace, trace, logprob, logprob!, sample, observe, loglikelihood, prior
+export Node, node, Trace, trace, logprob, logprob!, sample, observe, loglikelihood, prior, aic
 export node_info, graph, transform
 export Nonstandard, Standard, Replayed, Conditioned, Deterministic
 export NONSTANDARD, STANDARD, REPLAYED, CONDITIONED, DETERMINISTIC

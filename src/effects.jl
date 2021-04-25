@@ -107,7 +107,7 @@ place the trace passed into it as the first argument.
 """
 function update(f :: F, r :: SamplingResults{I}) where {F <: Function, I <: InferenceType}
     function g(t :: Trace, params...)
-        t_sampled = StatsBase.sample(r.traces)
+        t_sampled = StatsBase.sample(r.traces)  # maintains correct dims throughout
         kts = keys(t_sampled)
         marginals = Dict()
         for a in kts
@@ -122,4 +122,27 @@ function update(f :: F, r :: SamplingResults{I}) where {F <: Function, I <: Infe
     g
 end
 
-export block, replay, update, replace, rewrite
+@doc raw"""
+    function condition(f :: F, evidence :: Dict) where F <: Function
+
+Condition a trace modified by `f` on `evidence`, which maps addresses to observed 
+evidence associated with that address. Returns a function with call signature 
+identical to that of `f` and return signature `(t :: Trace, rtype)` where `rtype`
+is the return type of `f`.
+"""
+function condition(f :: F, evidence :: Dict) where F <: Function
+    function g(t :: Trace, params...)
+        r = f(t, params...)
+        for (a, e) in evidence
+            li = t[a].interpretation
+            t[a] = node(e, a, t[a].dist, true, STANDARD)
+            t[a].last_interpretation = li
+        end
+        t_new, h = replay(f, t)
+        r = h(params...)
+        (t_new, r)
+    end
+    g
+end
+
+export block, replay, update, replace, rewrite, condition
