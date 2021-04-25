@@ -67,6 +67,12 @@ function main()
     β_std = std(results, :β)
     @info "Posterior mean regression coefficients = $β_mean"
     @info "Posterior std regression coefficients = $β_std"
+
+    # serve posterior predictive using empirical posterior
+    new_X = randn(D, 10)
+    post_pred_linear_model = update(linear_model!, results)
+    @info "Serving predictions from posterior predictive"
+    @time served_trace, _ = post_pred_linear_model(trace(), out, new_X, nothing)
 end
 
 main()
