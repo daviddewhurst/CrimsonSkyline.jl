@@ -8,6 +8,7 @@ This is a simple trace-based probabilistic programming language embedded in Juli
     traces with user-defined proposal kernels.
 + It includes a library of composable effect handlers that change the interpretation of a program's stochastic compute graph.
 + It does not have many package dependencies.
++ Julia 1.6.1 or higher.
 
 CrimsonSkyline.jl currently supports two families of inference algorithms:
 
