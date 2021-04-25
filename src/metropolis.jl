@@ -12,18 +12,6 @@ struct Metropolis <: InferenceType end
 const METROPOLIS = Metropolis()
 
 metropolis_results() = SamplingResults{Metropolis}(METROPOLIS, Array{Float64, 1}(), Array{Any, 1}(), Array{Trace, 1}())
-
-# maybe Proposed will have meaning later, stub out just in case
-# e.g., right now new trace is made in mh, but is this always true?
-
-sample(t :: Trace, a, d, i :: Proposed) = sample(t, a, d, NONSTANDARD)
-
-@doc raw"""
-    propose(t :: Trace, a, d)
-
-Propose a value for the address `a` in trace `t` from the distribution `d`.
-"""
-propose(t :: Trace, a, d) = sample(t, a, d, PROPOSED)
 symmetric(f :: F) where F <: Function = false
 
 ### independent prior metropolis stuff ###

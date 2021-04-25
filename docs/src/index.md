@@ -62,6 +62,7 @@ Importance sampling algorithms and utilities.
 Currently the following importance sampling algorithms are implemented:
 
 + Likelihood weighting
++ Generic user-defined proposal
 
 ```@autodocs
 Modules = [CrimsonSkyline]

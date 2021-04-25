@@ -437,6 +437,18 @@ function observe(t :: Trace, a, d, s; pa = ())
     end
 end
 
+# maybe Proposed will have meaning later, stub out just in case
+# e.g., right now new trace is made in mh, but is this always true?
+
+sample(t :: Trace, a, d, i :: Proposed) = sample(t, a, d, NONSTANDARD)
+
+@doc raw"""
+    propose(t :: Trace, a, d)
+
+Propose a value for the address `a` in trace `t` from the distribution `d`.
+"""
+propose(t :: Trace, a, d) = sample(t, a, d, PROPOSED)
+
 @doc raw"""
     function prior(f :: F, addresses :: Union{AbstractArray, Tuple}, params...; nsamples :: Int = 1) where F <: Function
 
