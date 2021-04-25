@@ -28,6 +28,7 @@ include("results.jl")
 include("effects.jl")
 include("importance.jl")
 include("metropolis.jl")
+include("vi.jl")
 
 include("io.jl")
 
