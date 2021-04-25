@@ -80,6 +80,19 @@ function mh_step(t :: Trace, f :: F; params = (), return_val :: Bool = false) wh
     end
 end
 
+@doc raw"""
+    function mh(f :: F; params = (), burn = 100, thin = 10, num_iterations = 10000) where F <: Function 
+
+Generic Metropolis algorithm using draws from the prior.
+
+Args:
+
++ `f`: stochastic function. Must have call signature `f(t :: Trace, params...)`
++ `params`: addditional arguments to pass to `f` and each of the proposal kernels.
++ `burn`: number of samples to discard at beginning of markov chain
++ `thin`: keep only every `thin`-th draw. E.g., if `thin = 100`, only every 100-th trace will be kept.
++ `num_iterations`: total number of steps to take in the markov chain
+"""
 function mh(f :: F; params = (), burn = 100, thin = 10, num_iterations = 10000) where F <: Function 
     results = metropolis_results()
     t = trace()
@@ -163,23 +176,62 @@ accepts based on the log acceptance probability:
 \log \alpha = \log p(t_{\text{new}}) - \log q(t_{\text{new}}|t_{\text{old}}) - [\log p(t_{\text{old}}) - \log q(t_{\text{old}} | t_{\text{new}})].
 ``
 """
-function mh_step(t :: Trace, f :: F1, q :: F2; params = ()) where {F1 <: Function, F2 <: Function}
+function mh_step(t :: Trace, f :: F1, q :: F2; params = (), return_val :: Bool = false) where {F1 <: Function, F2 <: Function}
     new_t = trace()
     f(new_t, params...)
     copy_common!(t, new_t)
     logprob!(t)
     q(t, new_t, params...) # propose into the trace
     new_t, g = replay(f, new_t)
-    g(params...)  # new joint
+    r = g(params...)  # new joint
     logprob!(new_t)
     log_q_new_given_old = logprob(t, new_t)
     log_q_old_given_new = logprob(new_t, t)
     log_a = new_t.logprob_sum + log_q_old_given_new - t.logprob_sum - log_q_new_given_old
-    accept(t, new_t, log_a)
+    a = accept(t, new_t, log_a)
+    if !return_val
+        a
+    else
+        (r, a)
+    end
 end
 
-function mh(f :: F, qs :: A; params = ()) where {F <: Function, A <: AbstractArray}
-    error("Not yet implemented!")
+@doc raw"""
+    function mh(f :: F, qs :: A; params = (), burn = 100, thin = 10, num_iterations = 10000, inverse_verbosity = 100) where {F <: Function, A <: AbstractArray}
+
+Generic Metropolis algorithm using user-defined proposal kernels.
+
+Args:
+
++ `f`: stochastic function. Must have call signature `f(t :: Trace, params...)`
++ `qs`: array-like of proposal kernels. Proposal kernels are applied sequentially in the order that they appear in this array.
+    Proposal kernels must have the signature `q(old_t :: Trace, new_t :: Trace, params...)` where it must take in at least the same number of arguments
+    in `params` as `f`.
++ `params`: addditional arguments to pass to `f` and each of the proposal kernels.
++ `burn`: number of samples to discard at beginning of markov chain
++ `thin`: keep only every `thin`-th draw. E.g., if `thin = 100`, only every 100-th trace will be kept.
++ `num_iterations`: total number of steps to take in the markov chain
++ `inverse_verbosity`: every `inverse_verbosity` iterations, a stattus report will be logged.
+"""
+function mh(f :: F, qs :: A; params = (), burn = 100, thin = 10, num_iterations = 10000, inverse_verbosity = 100) where {F <: Function, A <: AbstractArray}
+    results = metropolis_results()
+    t = trace()
+    f(t, params...)
+    local r
+    for n in 1:num_iterations
+        for q in qs
+            (r, t) = mh_step(t, f, q; params = params, return_val = true)
+        end
+        if (n > burn) && (n % thin == 0)
+            push!(results.return_values, r)
+            push!(results.traces, t)
+            push!(results.log_weights, logprob(t))
+        end
+        if n % inverse_verbosity == 0
+            @info "On iteration $n of $num_iterations"
+        end
+    end
+    results
 end
 
 export propose, is_symmetric

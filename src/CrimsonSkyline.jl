@@ -12,6 +12,7 @@ using DataStructures
 using Distributions
 using PrettyPrint: pprintln
 using StatsBase
+using Logging
 using JuliaDB
 
 include("util.jl")
