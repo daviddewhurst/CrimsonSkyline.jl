@@ -22,4 +22,4 @@ end
 
 parameter(t :: Trace, a, v; pa = ()) = sample(t, a, v, PARAMETER; pa = pa)
 
-export Parameter, parameter
+export Parameter, PARAMETER, parameter
