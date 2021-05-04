@@ -31,12 +31,12 @@ function test_switch_model(t :: Trace)
     loc1 = sample(t, :loc1, Normal(0.0, 1.0))
     loc2 = sample(t, :loc2, Normal(1.0, 1.0))
     val = transform(t, :val,
-        (z, a, b) -> if z < 1 a else b end,
+        (z, a, b) -> z < 1 ? a : b,
         (z, loc1, loc2);
         pa = (:z, :loc1, :loc2)
     )
-    data = sample(t, :data, Normal(val, 1.0); pa = (:val,))
-    data
+    obs_scale = transform(t, :obs_scale, () -> 1.0, (); pa = ())
+    sample(t, :data, Normal(val, obs_scale); pa = (:val, :obs_scale))
 end
 
 @testset "get transformed graph from trace" begin
@@ -48,20 +48,45 @@ end
     @test ir.info[:val]["pa"] == [:z, :loc1, :loc2]
 end
 
+function switch_model_2(t :: Trace, data)
+    z = sample(t, :z, Bernoulli(0.5))
+    loc1 = sample(t, :loc1, Normal(0.0, 1.0))
+    loc2 = sample(t, :loc2, Normal(1.0, 1.0))
+    val = transform(t, :val,
+        (z, a, b) -> z < 1 ? a : b,
+        (z, loc1, loc2);
+        pa = (:z, :loc1, :loc2)
+    )
+    obs_scale = sample(t, :obs_scale, LogNormal())
+    observe(t, :data, Normal(val, obs_scale), data; pa = (:val, :obs_scale))
+end
+
+@testset "sample graph 1" begin
+    data = 2.0
+    t = trace()
+    switch_model_2(t, data)
+    g = graph_ir(t)
+    (s, lp) = sample(g)
+    @info "Sampled from switch model graph: $s"
+    @info "Log prob of sample: $lp"
+end
+
 @testset "get factor graph from graph ir" begin
     t = trace()
     test_switch_model(t)
     factor_graph = factor(t)
     # verify factor construction
-    @test factor_graph.factor_to_node[0] == Set((:data, :val))
-    @test factor_graph.factor_to_node[1] == Set((:val, :z, :loc1, :loc2))
-    @test factor_graph.factor_to_node[2] == Set((:loc2,))
-    @test factor_graph.factor_to_node[3] == Set((:loc1,))
-    @test factor_graph.factor_to_node[4] == Set((:z,))
-    @test factor_graph.node_to_factor[:z] == Set((4, 1))
-    @test factor_graph.node_to_factor[:loc1] == Set((3, 1))
-    @test factor_graph.node_to_factor[:loc2] == Set((2, 1))
-    @test factor_graph.node_to_factor[:val] == Set((1, 0))
+    @test factor_graph.factor_to_node[0] == Set((:data, :val, :obs_scale))
+    @test factor_graph.factor_to_node[1] == Set((:obs_scale,))
+    @test factor_graph.factor_to_node[2] == Set((:val, :z, :loc1, :loc2))
+    @test factor_graph.factor_to_node[3] == Set((:loc2,))
+    @test factor_graph.factor_to_node[4] == Set((:loc1,))
+    @test factor_graph.factor_to_node[5] == Set((:z,))
+    @test factor_graph.node_to_factor[:z] == Set((5, 2))
+    @test factor_graph.node_to_factor[:loc1] == Set((4, 2))
+    @test factor_graph.node_to_factor[:loc2] == Set((3, 2))
+    @test factor_graph.node_to_factor[:val] == Set((0, 2))
+    @test factor_graph.node_to_factor[:obs_scale] == Set((0, 1))
     @test factor_graph.node_to_factor[:data] == Set((0,))
 end
 
