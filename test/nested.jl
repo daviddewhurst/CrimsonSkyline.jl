@@ -17,12 +17,12 @@ end
 
     for n in [3, 4, 8, 15, 25, 50]
         @info "Nested sampling inference with $n points"
-        results = nested(model; params = (data,), num_points = n)
+        @time results = nested(model; params = (data,), num_points = n)
         mean_loc = mean(results, "loc")
         mean_std = mean(results, "scale")
         @info "Posterior mean loc = $mean_loc"
         @info "Posterior mean scale = $mean_std"
         log_Z = logsumexp(results.log_weights)
-        @info "log p(x) ≈ $log_Z\n"
+        @info "log p(x) ≈ $log_Z"
     end
 end
