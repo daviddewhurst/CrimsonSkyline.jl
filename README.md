@@ -17,6 +17,7 @@ CrimsonSkyline.jl currently supports two families of inference algorithms:
 + Metropolis-Hastings
     + Independent prior proposal
     + Generic user-defined proposal
++ Nested sampling
 
 We might implement more inference algorithms soon.
 
