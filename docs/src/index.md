@@ -172,6 +172,12 @@ Modules = [CrimsonSkyline]
 Pages = ["metropolis.jl"]
 ```
 
+## nested
+```@autodocs
+Modules = [CrimsonSkyline]
+Pages = ["nested.jl"]
+```
+
 ## results
 ```@autodocs
 Modules = [CrimsonSkyline]
