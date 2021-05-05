@@ -111,7 +111,8 @@ function update(f :: F, r :: SamplingResults{I}) where {F <: Function, I <: Infe
         kts = keys(t_sampled)
         marginals = Dict()
         for a in kts
-            if t_sampled[a].observed == false && !(t_sampled[a].interpretation == CONDITIONED)
+            tr_condition = a in keys(t) && !(t[a].interpretation == CONDITIONED)
+            if t_sampled[a].observed == false || tr_condition
                 sample(t, a, r)
                 marginals[a] = r[a]
             end
