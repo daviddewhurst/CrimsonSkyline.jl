@@ -105,6 +105,15 @@ function sample(d :: D, sampled :: OrderedDict, i :: Deterministic) where {D <: 
     (value, 0.0)  # deterministic transsform doesn't affect log prob
 end
 
+sample(d :: D, sampled :: OrderedDict, i :: Input) where {D <: AbstractDict} = (d["data"], 0.0)
+
+@doc raw"""
+    function sample(g :: GraphIR)
+
+Sample from the Bayes net implicitly defined by `g`. Returns a tuple `(s, lp)`, 
+where `s` is an `OrderedDict` of `address => value` and `lp` is an `OrderedDict` of
+`address => log probability`.
+"""
 function sample(g :: GraphIR)
     sampled = OrderedDict()
     log_probs = OrderedDict()
@@ -115,6 +124,16 @@ function sample(g :: GraphIR)
         log_probs[address] = this_lp
     end
     (sampled, log_probs)
+end
+
+function leaf_vars(g :: GraphIR)
+    v = []
+    for (a, n) in g.info
+        if n["interpretation"] != INPUT && length(n["pa"]) == 0
+            push!(v, a)
+        end
+    end
+    v
 end
 
 @doc raw"""

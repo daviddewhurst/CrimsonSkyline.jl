@@ -49,6 +49,7 @@ end
 end
 
 function switch_model_2(t :: Trace, data)
+    data = input(t, :data, data)
     z = sample(t, :z, Bernoulli(0.5))
     loc1 = sample(t, :loc1, Normal(0.0, 1.0))
     loc2 = sample(t, :loc2, Normal(1.0, 1.0))
@@ -58,7 +59,7 @@ function switch_model_2(t :: Trace, data)
         pa = (:z, :loc1, :loc2)
     )
     obs_scale = sample(t, :obs_scale, LogNormal())
-    observe(t, :data, Normal(val, obs_scale), data; pa = (:val, :obs_scale))
+    observe(t, :obs, Normal(val, obs_scale), data; pa = (:val, :obs_scale))
 end
 
 @testset "sample graph 1" begin
