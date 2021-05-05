@@ -111,7 +111,7 @@ function update(f :: F, r :: SamplingResults{I}) where {F <: Function, I <: Infe
         kts = keys(t_sampled)
         marginals = Dict()
         for a in kts
-            if t_sampled[a].observed == false
+            if t_sampled[a].observed == false && !(t_sampled[a].interpretation == CONDITIONED)
                 sample(t, a, r)
                 marginals[a] = r[a]
             end
@@ -135,7 +135,7 @@ function condition(f :: F, evidence :: Dict) where F <: Function
         r = f(t, params...)
         for (a, e) in evidence
             li = t[a].interpretation
-            t[a] = node(e, a, t[a].dist, true, STANDARD)
+            t[a] = node(e, a, t[a].dist, true, CONDITIONED)
             t[a].last_interpretation = li
         end
         t_new, h = replay(f, t)
