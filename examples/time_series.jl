@@ -36,12 +36,15 @@ end
 function main()
     n = 10
     t = 20
+    t_pred = 10
 
     @info "Random walk inference"
     loc = 1.0
     scale = 1.5
-    noise = rand(n, t)
+    noise = rand(n, t + t_pred)
     data = cumsum(loc .+ scale .* noise, dims=2)
+    test_data = data[:, t:end]
+    data = data[:, 1:t]
     @info "True loc = $loc, true scale = $scale"
     @time results = mh(random_walk; params=(data,), burn=1000, thin=50, num_iterations=50000)
     @info "Estimated loc = ($(mean(results, :loc)) ± $(2.0 * std(results, :loc)))"
