@@ -22,7 +22,7 @@ function node_info(t :: Trace, a)
         "observed" => n.observed,
         "interpretation" => n.interpretation
     )
-    if n.observed
+    if n.observed || n.interpretation == CONDITIONED
         info["data"] = n.value
     end
     ch = [that_n.address for that_n in n.ch]
@@ -60,6 +60,80 @@ function graph_ir(t :: Trace)
         g[node["address"]] = children
     end
     GraphIR(info, g)
+end
+
+function get_pa_values(d, sampled :: OrderedDict)
+    pa = d["pa"]
+    l_pa = length(pa)
+    local values
+    if l_pa == 0
+        values = nothing
+    elseif l_pa == 1
+        values = get(sampled, pa[1], nothing)
+    else  # parsed from left to right
+        values = [get(sampled, pa[i], nothing) for i in 1:l_pa]
+    end
+    values
+end
+
+function get_dist(d, sampled :: OrderedDict)
+    values = get_pa_values(d, sampled)
+    values === nothing ? d["dist"] : typeof(d["dist"])(values...)
+end
+
+function sample(d :: D, sampled :: OrderedDict, i :: I) where {D <: AbstractDict, I <: Interpretation}
+    dist = get_dist(d, sampled)
+    value = rand(dist)
+    lp = logpdf(dist, value)
+    (value, lp)
+end
+
+function sample(d :: D, sampled :: OrderedDict, i :: Union{Standard,Conditioned}) where {D <: AbstractDict}
+    dist = get_dist(d, sampled)
+    lp = logpdf(dist, d["data"])
+    (d["data"], lp)
+end
+
+function sample(d :: D, sampled :: OrderedDict, i :: Deterministic) where {D <: AbstractDict}
+    values = get_pa_values(d, sampled)
+    local value
+    if values === nothing
+        value = d["dist"]()
+    else
+        value = d["dist"](values...)
+    end
+    (value, 0.0)  # deterministic transsform doesn't affect log prob
+end
+
+sample(d :: D, sampled :: OrderedDict, i :: Input) where {D <: AbstractDict} = (d["data"], 0.0)
+
+@doc raw"""
+    function sample(g :: GraphIR)
+
+Sample from the Bayes net implicitly defined by `g`. Returns a tuple `(s, lp)`, 
+where `s` is an `OrderedDict` of `address => value` and `lp` is an `OrderedDict` of
+`address => log probability`.
+"""
+function sample(g :: GraphIR)
+    sampled = OrderedDict()
+    log_probs = OrderedDict()
+    for address in keys(g.graph)
+        node = g.info[address]
+        (this_s, this_lp) = sample(node, sampled, node["interpretation"])
+        sampled[address] = this_s
+        log_probs[address] = this_lp
+    end
+    (sampled, log_probs)
+end
+
+function leaf_vars(g :: GraphIR)
+    v = []
+    for (a, n) in g.info
+        if n["interpretation"] != INPUT && length(n["pa"]) == 0
+            push!(v, a)
+        end
+    end
+    v
 end
 
 @doc raw"""
@@ -112,3 +186,4 @@ factor(t :: Trace) = factor(graph_ir(t))
 
 
 export node_info, GraphIR, graph_ir, Factor, factor
+export sample

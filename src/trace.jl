@@ -9,6 +9,7 @@ struct Blocked <: Interpretation end
 struct Deterministic <: Interpretation end
 struct Proposed <: Interpretation end
 struct Empirical <: Interpretation end
+struct Input <: Interpretation end
 
 const NONSTANDARD = Nonstandard()
 const STANDARD = Standard()
@@ -18,6 +19,7 @@ const CONDITIONED = Conditioned()
 const DETERMINISTIC = Deterministic()
 const PROPOSED = Proposed()
 const EMPIRICAL = Empirical()
+const INPUT = Input()
 
 @doc raw"""
     mutable struct Node{A, D, T, P}
@@ -67,6 +69,8 @@ function node(value, address :: A, dist :: D, is_obs :: Bool, i :: Interpretatio
     Node{A, D, T, P}(address, dist, value, lp, sum(lp), is_obs, Array{Node, 1}(), Array{Node, 1}(), i, i)
 end
 
+Distributions.logpdf(::Input, value) = 0.0
+
 @doc raw"""
     mutable struct Trace
         trace :: OrderedDict{Any, Node}
@@ -100,7 +104,7 @@ Changes the interpretation of all nodes in `t` to have `interpretation == i`
 """
 function interpret_latent!(t :: Trace, i :: Interpretation)
     for a in keys(t)
-        if !t[a].observed
+        if !t[a].observed && !(t[a].interpretation == CONDITIONED)
             t[a].interpretation = i
         end
     end
@@ -350,7 +354,7 @@ function sample(t :: Trace, a, d, s, i :: Standard; pa = ())
 end
 
 @doc raw"""
-    function sample(t :: Trace, a, d, i :: Standard; pa = ())   
+    function sample(t :: Trace, a, d, i :: Union{Standard,Conditioned}; pa = ())   
 
 Scores an observed value against the distribution `d`, storing the value in trace `t` at 
 address `a` and optionally adds nodes corresponding to the addresses in `pa` as parent nodes.
@@ -358,7 +362,7 @@ address `a` and optionally adds nodes corresponding to the addresses in `pa` as 
 This method is used by the `condition` effect. It will probably not be used by most 
 users.
 """
-function sample(t :: Trace, a, d, i :: Standard; pa = ())
+function sample(t :: Trace, a, d, i :: Union{Standard,Conditioned}; pa = ())
     n = node(t[a].value, a, d, true, i)
     t[a] = n
     connect_pa_ch!(t, pa, a)
@@ -385,6 +389,21 @@ function sample(t :: Trace, a, f, v, i :: Deterministic; pa = ())
     connect_pa_ch!(t, pa, a)
     r
 end
+
+function sample(t :: Trace, a, d, i :: Input)
+    n = node(d, a, INPUT, true, i)
+    t[a] = n
+    connect_pa_ch!(t, (), a)
+    d
+end
+
+@doc raw"""
+    input(t :: Trace, a, d)
+
+Track a model input. Used only in graph intermediate representation and factor 
+graph.
+"""
+input(t :: Trace, a, d) = sample(t, a, d, INPUT)
 
 @doc raw"""
     function transform(t :: Trace, a, f :: F, v; pa = ()) where F <: Function
@@ -474,7 +493,7 @@ function prior(f :: F, addresses :: Union{AbstractArray, Tuple}, params...; nsam
 end
 
 
-export Node, node, Trace, trace, logprob, logprob!, sample, observe, loglikelihood, prior, aic
+export Node, node, Trace, trace, logprob, logprob!, sample, observe, input, loglikelihood, prior, aic
 export node_info, graph, transform
-export Nonstandard, Standard, Replayed, Conditioned, Deterministic
-export NONSTANDARD, STANDARD, REPLAYED, CONDITIONED, DETERMINISTIC
+export Nonstandard, Standard, Replayed, Conditioned, Deterministic, Input
+export NONSTANDARD, STANDARD, REPLAYED, CONDITIONED, DETERMINISTIC, INPUT

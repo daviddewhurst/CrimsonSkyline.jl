@@ -5,7 +5,7 @@
     @test t[(:data, 1)].interpretation == NONSTANDARD
     cp = condition(program!, Dict((:data, 1) => 4))
     t, _ = cp(t, n_datapoints)
-    @test t[(:data, 1)].interpretation == STANDARD
+    @test t[(:data, 1)].interpretation == CONDITIONED
     @test t[(:data, 1)].value == 4
     @info "(:data, 1) = $(t[(:data, 1)])"
 end

@@ -111,7 +111,10 @@ function update(f :: F, r :: SamplingResults{I}) where {F <: Function, I <: Infe
         kts = keys(t_sampled)
         marginals = Dict()
         for a in kts
-            if t_sampled[a].interpretation == NONSTANDARD
+            sampled_not_obs = t_sampled[a].observed == false
+            not_in_t = !(a in keys(t))
+            in_t_and_not_obs = !not_in_t && t[a].observed == false
+            if (sampled_not_obs && not_in_t) || in_t_and_not_obs
                 sample(t, a, r)
                 marginals[a] = r[a]
             end
@@ -132,15 +135,11 @@ is the return type of `f`.
 """
 function condition(f :: F, evidence :: Dict) where F <: Function
     function g(t :: Trace, params...)
-        r = f(t, params...)
         for (a, e) in evidence
-            li = t[a].interpretation
-            t[a] = node(e, a, t[a].dist, true, STANDARD)
-            t[a].last_interpretation = li
+            t[a] = node(e, a, [e], true, CONDITIONED)
         end
-        t_new, h = replay(f, t)
-        r = h(params...)
-        (t_new, r)
+        r = f(t, params...)
+        (t, r)
     end
     g
 end
