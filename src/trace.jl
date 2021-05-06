@@ -104,7 +104,7 @@ Changes the interpretation of all nodes in `t` to have `interpretation == i`
 """
 function interpret_latent!(t :: Trace, i :: Interpretation)
     for a in keys(t)
-        if !t[a].observed
+        if !t[a].observed && !(t[a].interpretation == CONDITIONED)
             t[a].interpretation = i
         end
     end
@@ -354,7 +354,7 @@ function sample(t :: Trace, a, d, s, i :: Standard; pa = ())
 end
 
 @doc raw"""
-    function sample(t :: Trace, a, d, i :: Standard; pa = ())   
+    function sample(t :: Trace, a, d, i :: Union{Standard,Conditioned}; pa = ())   
 
 Scores an observed value against the distribution `d`, storing the value in trace `t` at 
 address `a` and optionally adds nodes corresponding to the addresses in `pa` as parent nodes.
@@ -362,7 +362,7 @@ address `a` and optionally adds nodes corresponding to the addresses in `pa` as 
 This method is used by the `condition` effect. It will probably not be used by most 
 users.
 """
-function sample(t :: Trace, a, d, i :: Standard; pa = ())
+function sample(t :: Trace, a, d, i :: Union{Standard,Conditioned}; pa = ())
     n = node(t[a].value, a, d, true, i)
     t[a] = n
     connect_pa_ch!(t, pa, a)
