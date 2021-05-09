@@ -1,14 +1,3 @@
-function lomax_model(t :: Trace)
-    scale = sample(t, :scale, Lomax(1.0, 2.0))
-    observe(t, :data, Normal(0.0, scale), nothing)
-end
-
-@testset "created distributions: lomax" begin
-    t = trace()
-    lomax_model(t)
-    @test typeof(t[:scale]) == Node{Symbol,Lomax{Float64},Float64,Float64}
-end
-
 function normal_model(t :: Trace, data :: Vector{Float64})
     loc = sample(t, :loc, Normal())
     scale = sample(t, :scale, LogNormal())
