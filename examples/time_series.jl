@@ -41,7 +41,7 @@ function main()
     @info "Random walk inference"
     loc = 1.0
     scale = 1.5
-    noise = rand(n, t + t_pred)
+    noise = randn(n, t + t_pred)
     data = cumsum(loc .+ scale .* noise, dims=2)
     test_data = data[:, t:end]
     data = data[:, 1:t]
