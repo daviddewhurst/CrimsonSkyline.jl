@@ -22,10 +22,11 @@ We might implement more inference algorithms soon.
 ## Examples
 
 See the `examples` directory:
-    + `basic.jl`: Bayesian linear regression and serving a posterior predictive model
-    + `clustering.jl`: open-universe clustering model where the number of clusters is *a priori* unbounded
-    + `time_series.jl`: basic time series inference and model comparison
-    + `forecast.jl`: time series inference, posterior predictive, and generation of online forecasts using effects.
+
++ `basic.jl`: Bayesian linear regression and serving a posterior predictive model
++ `clustering.jl`: open-universe clustering model where the number of clusters is *a priori* unbounded
++ `time_series.jl`: basic time series inference and model comparison
++ `forecast.jl`: time series inference, posterior predictive, and generation of online forecasts using effects.
 
 #### Other information
 + CrimsonSkyline.jl is released under the GNU GPL v3.
