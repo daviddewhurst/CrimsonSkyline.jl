@@ -235,4 +235,4 @@ function mh(f :: F, qs :: A; params = (), burn = 100, thin = 10, num_iterations 
 end
 
 export propose, is_symmetric
-export mh_step, mh
+export mh_step, mh, metropolis_results
