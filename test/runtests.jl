@@ -1,6 +1,6 @@
 using Test
 using Logging
-using Distributions: Normal, Poisson, Gamma, LogNormal, Bernoulli, Geometric, MvNormal, truncated
+using Distributions: Normal, Poisson, Gamma, LogNormal, Bernoulli, Geometric, MvNormal, truncated, Dirichlet, Categorical
 using StatsBase: mean, std
 using PrettyPrint: pprintln
 using Random
@@ -11,6 +11,7 @@ Random.seed!(2021)
 
 include("basic.jl")
 include("condition_and_observe.jl")
+include("io.jl")
 include("importance_sampling.jl")
 include("metropolis.jl")
 include("nested.jl")

@@ -495,5 +495,5 @@ end
 
 export Node, node, Trace, trace, logprob, logprob!, sample, observe, input, loglikelihood, prior, aic
 export node_info, graph, transform
-export Nonstandard, Standard, Replayed, Conditioned, Deterministic, Input
-export NONSTANDARD, STANDARD, REPLAYED, CONDITIONED, DETERMINISTIC, INPUT
+export Nonstandard, Standard, Replayed, Conditioned, Deterministic, Input, Empirical
+export NONSTANDARD, STANDARD, REPLAYED, CONDITIONED, DETERMINISTIC, INPUT, EMPIRICAL
