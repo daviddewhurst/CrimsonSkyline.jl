@@ -111,7 +111,7 @@ block(f :: F, t :: Trace) where F <: Function = block(f, t, keys(t))
 @doc raw"""
     function update(f :: F, r :: SamplingResults{I}) where {F <: Function, I <: InferenceType}
 
-**EXPERIMENTAL**: Given a stochastic function `f` and a `SamplingResults` `r`, update the prior 
+Given a stochastic function `f` and a `SamplingResults` `r`, update the prior 
 predictive to the posterior predictive by jointly replacing all latent sample sites with the joint empirical 
 posterior. Returns a stochastic function `g` with the same call signature as `f`. This function will modify in 
 place the trace passed into it as the first argument.

@@ -16,7 +16,7 @@ function normal_model(t::Trace, data::Vector{T}) where T
     log_scale = sample(t, "log_scale", Normal())
     obs = Vector{Float64}(undef, length(data))
     for (i, d) in enumerate(data)
-        push!(obs, observe(t, "obs $i", Normal(loc, exp(log_scale)), d))
+        obs[i] = observe(t, "obs $i", Normal(loc, exp(log_scale)), d)
     end
     (t, obs)
 end
@@ -31,7 +31,7 @@ function augmented_normal_model(t::Trace, data1::Vector{T1}, data2::Vector{T2}) 
 end
 
 function demo_replay()
-    @info "\n~~~Demo replay effect~~~\n"
+    @warn "\n~~~Demo replay effect~~~\n"
     # replay makes a stochastic function behave as though it had 
     # sampled values from a different passed trace
     data = randn(1)
@@ -54,7 +54,7 @@ function demo_replay()
 end
 
 function demo_block()
-    @info "\n~~~Demo block effect~~~\n"
+    @warn "\n~~~Demo block effect~~~\n"
     # block hides sample sites from the outside world, i.e., converts them 
     # into untraced randomness. While they still affect internal model 
     # dynamics, their values are not recorded in the trace (e.g., they do not
@@ -106,9 +106,76 @@ function demo_block()
     end
 end
 
+# use this version to demonstrate the updating process
+
+function normal_model(t::Trace, data::Vector{T}, verbose::Bool) where T
+    loc = sample(t, "loc", Normal(0.0, 4.0))
+    log_scale = sample(t, "log_scale", Normal())
+    if verbose
+        @info "Normal model: loc = $loc, log_scale = $log_scale"
+    end
+    obs = Vector{Float64}(undef, length(data))
+    for (i, d) in enumerate(data)
+        obs[i] = observe(t, "obs $i", Normal(loc, exp(log_scale)), d)
+    end
+    if verbose
+        @info "Normal model: obs = $obs"
+    end
+    (t, obs)
+end
+
+function demo_update()
+    @warn "\n~~~Demo update effect~~~\n"
+    # grab some samples from the prior
+    data = randn(2) .+ 2.0
+    sites = ["loc", "log_scale"]
+    prior_samples = prior(normal_model, sites, data, false; nsamples = 100)
+    for site in sites
+        @info "Prior mean $site: $(mean(prior_samples[site]))"
+        @info "Prior std $site: $(std(prior_samples[site]))"
+    end
+    # now, perform inference
+    inference_results = mh(normal_model; params = (data, false), burn=500, thin=50, num_iterations = 5000)
+    for site in sites
+        @info "Posterior mean $site: $(mean(inference_results, site))"
+        @info "Posterior std $site: $(std(inference_results, site))"
+    end
+    # update from prior to empirical posterior
+    posterior_normal_model = update(normal_model, inference_results)
+    # draw some values from the posterior predictive
+    n_pp = 10
+    map((n) -> posterior_normal_model(trace(), [nothing], true)[end][end], 1:n_pp)
+end
+
+function demo_condition()
+    @warn "\n~~~Demo condition effect~~~\n"
+    # condition imposes a "soft constraint" when applying evidence to a node
+    # this means that the model isn't guaranteed to sample the conditioned value at 
+    # that node, but when it does not sample the conditioned value, the log prob of
+    # the trace is = -Inf. Practically, condition *does* enforce a hard constraint on 
+    # node value for all models with static structure (e.g., see forecast.jl for another 
+    # applied example). However, in models with open universe structure, applying evidence 
+    # to a node that only exists conditioned on the values of upstream choices may result 
+    # in that node not being reached for a particular model evaluation. 
+    # This results in the log prob of the trace = -Inf.
+    data = randn(2) .+ 2.0
+    @info "Before conditioning"
+    (t, _) = normal_model(trace(), data, true)
+    @info "Unconditioned trace: $t"
+    # condition loc to be equal to 3.0
+    loc = 3.0
+    @info "Condition loc = $loc"
+    @info "After conditioning"
+    conditioned_normal_model = condition(normal_model, Dict("loc" => loc))
+    (t, (t, r)) = conditioned_normal_model(trace(), data, true)
+    @info "Conditioned trace: $t"
+end
+
 function main()
     demo_replay()
     demo_block()
+    demo_update()
+    demo_condition()
 end 
 
 main()
