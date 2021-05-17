@@ -2,11 +2,20 @@
 
 This is a trace-based universal probabilistic programming language embedded in Julia. 
 
+Nice-to-haves:
 + Inference is programmable. For example, Metropolis-Hastings is implemented simply by incrementally modifying
     traces with user-defined proposal kernels.
     However, there are also user-friendly default inference routines built-in. 
 + It includes a library of composable effects that change the interpretation of a program's stochastic compute graph.
 
+Why-wouldn't-you-haves:
++ As a Julia library should, it actually supports multiple dispatch. (C.f. other universal PPLs embedded in Julia that do not.)
+
+Pet-peeve-haves:
++ It doesn't define any macros. 
++ It doesn't maintain any global state, e.g., there is no global parameter store. All inference is controlled locally by both the (user-defined) inference program and nodes themselves.
+
+## Inference algorithms
 CrimsonSkyline.jl currently supports three families of sampling-based inference algorithms:
 
 + Importance sampling
