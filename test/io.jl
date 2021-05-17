@@ -34,5 +34,3 @@ end
     @test new_t["z"].interpretation == EMPIRICAL
     rm(testpath, recursive=true)
 end
-
-exit()
