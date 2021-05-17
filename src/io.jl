@@ -61,6 +61,11 @@ function save(t :: Trace, f)
     f
 end
 
+@doc raw"""
+    function save(r :: SamplingResults, f)
+
+Saves a `SamplingResults` to disk in the directory `f`.
+"""
 function save(r :: SamplingResults, f)
     mkpath(f)
     pk = 1:length(r.traces)
@@ -78,7 +83,7 @@ function save(r :: SamplingResults, f)
 end
 
 @doc raw"""
-    function load(f) :: Trace
+    function load_jdb(f) :: Trace
         
 Loads a serialized juliadb table from file `f` and converts it into a trace.
 """
@@ -100,6 +105,14 @@ function load_jdb(f) :: Trace
     t
 end
 
+@doc raw"""
+    function load_csm(f) :: SamplingResults
+        
+Loads a `SamplingResults` from a directory. The directory contains `metadata.txt`,
+which currently stores the interpretation of the `SamplingResults` (i.e., what kind of 
+algorithm generated those results), and a file `results.jdb`, which is a JuliaDB table
+of the results.
+"""
 function load_csm(f) :: SamplingResults
     interpretation = open(joinpath(f, "metadata.txt"), "r") do f
         line = readline(f)
@@ -117,6 +130,13 @@ function load_csm(f) :: SamplingResults
     results
 end
 
+@doc raw"""
+    function load(f)
+
+Load a `Trace` or `SamplingResults` object from file. The file must be saved in JuliaDB
+format with ending `.jdb`, which will be interpreted as a single saved trace, or must be
+a directory with ending `.csm`, which will be interpreted as a `SamplingResults` object.
+"""
 function load(f)
     if endswith(f, ".jdb")
         load_jdb(f)

@@ -20,16 +20,37 @@ Pages = ["trace.jl"]
 
 ## io
 
-Saving and loading traces is possible using the `save` and `load` functions. This
-functionality depends on `JuliaDB`. Example usage (`fn` is a stochastic function):
+Saving and loading traces and `SamplingResults` is possible using the `save` and `load` functions. This functionality depends on `JuliaDB`. 
 
+Examples: 
 ```
+# simple example model
+function io_model(t::Trace, dim::Int64, data::Int64)
+    z = sample(t, "z", Dirichlet(ones(dim)))
+    observe(t, "x", Categorical(z), data)
+end
+
+# saving a trace
 t = trace()
-data = randn(2)
-fn(t, data)
-fname = joinpath(@__DIR__, "out", "my_file.jdb")
-f = save(t, fname)
-identical_t = load(f)
+dim = 10
+data = 7
+io_model(t, dim, data)
+testpath = joinpath(@__DIR__, "TESTIO")
+db_file = joinpath(testpath, "test.jdb")
+save(t, db_file)
+
+# loading a trace
+loaded_trace = load(db_file)
+
+# creating and saving some results
+results = mh(io_model; params = (dim, data), burn = 0, thin = 1, num_iterations=10)
+results_file = joinpath(testpath, "io_model.csm")
+save(results, results_file)
+
+# loading saved results and use to serve model
+loaded_results = load(joinpath(testpath, "io_model.csm"))
+updated_model = update(io_model, loaded_results)  # update effect, see effects.jl
+new_t, _ = updated_model(trace(), dim, data)
 ```
 
 ```@autodocs
@@ -42,19 +63,6 @@ A library of functions that change the interpretation of some or all nodes in a 
 ```@autodocs
 Modules = [CrimsonSkyline]
 Pages = ["effects.jl"]
-```
-
-## graph
-```@autodocs
-Modules = [CrimsonSkyline]
-Pages = ["graph.jl"]
-```
-
-## cpt
-Conditional probability tables (CPT) are a work in progress. Currently there are no implemented inference algorithms that operate on CPTs. 
-```@autodocs
-Modules = [CrimsonSkyline]
-Pages = ["cpt.jl"]
 ```
 
 ## importance
@@ -182,19 +190,6 @@ Pages = ["nested.jl"]
 ```@autodocs
 Modules = [CrimsonSkyline]
 Pages = ["results.jl"]
-```
-
-## fusion
-
-Methods to perform semi-analytical simplification and inference. 
-
-### fusion/distributions
-A collection of distributions that aren't in `Distributions.jl`. These distributions are useful in their own right, but are 
-also arise when fusing pairs or triples of known distributions.
-
-```@autodocs
-Modules = [CrimsonSkyline]
-Pages = ["fusion/distributions.jl"]
 ```
 
 ## Index

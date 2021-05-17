@@ -54,9 +54,8 @@ end
     function rewrite(f :: F, t :: Trace, r :: Dict) where F <: Function 
 
 Rewrites the history of the trace to make it appear as if the values in the trace
-were sampled at the addresses in the keys of `r` were sampled from the 
-corresponding distributions in the values of `r`. Returns a function with 
-call signature `g(params...)` that returns `(t :: Trace, rval)`, where `rval` 
+were sampled at the addresses in the keys of `r` from the corresponding distributions in the values of `r`. 
+Returns a function with call signature `g(params...)` that returns `(t :: Trace, rval)`, where `rval` 
 is the return type of `f`. 
 """
 function rewrite(f :: F, t :: Trace, r :: Dict) where F <: Function 
@@ -88,6 +87,18 @@ function block(f :: F, t :: Trace, addresses) where F <: Function
     end
     g(params...) = f(t_new, params...)
     (t_new, g)
+end
+
+function block(f::F, addresses) where F <: Function
+    function g(t::Trace, params...)
+        r = f(t, params...)
+        for a in addresses
+            delete!(t.trace, a)
+        end
+        logprob!(t)
+        r
+    end
+    g
 end
 
 @doc raw"""
@@ -136,7 +147,7 @@ is the return type of `f`.
 function condition(f :: F, evidence :: Dict) where F <: Function
     function g(t :: Trace, params...)
         for (a, e) in evidence
-            t[a] = node(e, a, [e], true, CONDITIONED)
+            t[a] = node(e, a, [CONDITIONED], true, CONDITIONED)
         end
         r = f(t, params...)
         (t, r)

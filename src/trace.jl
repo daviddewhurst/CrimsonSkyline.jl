@@ -44,8 +44,8 @@ mutable struct Node{A, D, T, P}
     observed :: Bool
     pa :: Array{Node, 1}
     ch :: Array{Node, 1}
-    interpretation :: Interpretation
-    last_interpretation :: Interpretation
+    interpretation :: Union{Interpretation, Vector{Interpretation}}
+    last_interpretation :: Union{Interpretation, Vector{Interpretation}}
 end
 
 @doc raw"""
@@ -216,7 +216,7 @@ end
 Sequentially apply sample statements with interpretations as given in `ii`. This is 
 used to depth-first traverse the interpretation graph.
 """
-function sample(t :: Trace, a, d, ii :: Array{Interpretation, 1}; pa = ())
+function sample(t :: Trace, a, d, ii :: Vector{Interpretation}; pa = ())
     local s
     for i in ii
         s = sample(t, a, d, i; pa = pa)
@@ -490,6 +490,14 @@ function prior(f :: F, addresses :: Union{AbstractArray, Tuple}, params...; nsam
         end
     end
     d
+end
+
+function Base.show(io::IO, t::Trace)
+    s = "\nTrace with $(length(t)) nodes:"
+    for node in values(t)
+        s *= "\n$(node.address) = ($(node.value), $(node.dist), $(node.logprob_sum), $(node.interpretation))"
+    end
+    print(io, s)
 end
 
 

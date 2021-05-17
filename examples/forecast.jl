@@ -80,7 +80,7 @@ function fake_data()
     evidence = Dict((:ic, k) => data[k, end] for k in 1:n)
     forecast_model = condition(posterior_model, evidence)
     forecast = [forecast_model(trace(), (n, t_pred))[end][end] for _ in 1:n_forecast]
-
+    @info "Forecasts: $forecast"
 end
 
 fake_data()
