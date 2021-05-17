@@ -93,7 +93,7 @@ Args:
 + `thin`: keep only every `thin`-th draw. E.g., if `thin = 100`, only every 100-th trace will be kept.
 + `num_iterations`: total number of steps to take in the markov chain
 """
-function mh(f :: F; params = (), burn = 100, thin = 10, num_iterations = 10000) where F <: Function 
+function mh(f :: F; params = (), burn = 1000, thin = 50, num_iterations = 10000) where F <: Function 
     results = metropolis_results()
     t = trace()
     r = f(t, params...)
