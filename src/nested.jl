@@ -1,7 +1,7 @@
 struct Nested <: InferenceType end
 const NESTED = Nested()
 
-nested_results(traces, log_weights) = SamplingResults{Nested}(NESTED, log_weights, Array{Any, 1}(), traces)
+nested_results(traces, log_weights) = NonparametricSamplingResults{Nested}(NESTED, log_weights, Array{Any, 1}(), traces)
 
 function sample(r :: SamplingResults{Nested}, k, n :: Int)
     v = r[k]

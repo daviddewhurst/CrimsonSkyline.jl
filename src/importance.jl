@@ -8,7 +8,7 @@ const IS = ImportanceSampling()
     likelihood_weighting_results()
 Outer constructor for `SamplingResults`.
 """
-likelihood_weighting_results() = SamplingResults{LikelihoodWeighting}(LW, Array{Float64, 1}(), Array{Any, 1}(), Array{Trace, 1}())
+likelihood_weighting_results() = NonparametricSamplingResults{LikelihoodWeighting}(LW, Array{Float64, 1}(), Array{Any, 1}(), Array{Trace, 1}())
 
 @doc raw"""
     function lw_step(f :: F, params...) where F <: Function 

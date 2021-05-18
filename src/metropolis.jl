@@ -11,7 +11,7 @@ const ASYMMETRIC = Asymmetric()
 struct Metropolis <: InferenceType end
 const METROPOLIS = Metropolis()
 
-metropolis_results() = SamplingResults{Metropolis}(METROPOLIS, Array{Float64, 1}(), Array{Any, 1}(), Array{Trace, 1}())
+metropolis_results() = NonparametricSamplingResults{Metropolis}(METROPOLIS, Array{Float64, 1}(), Array{Any, 1}(), Array{Trace, 1}())
 symmetric(f :: F) where F <: Function = false
 
 ### independent prior metropolis stuff ###
@@ -108,8 +108,17 @@ function mh(f :: F; params = (), burn = 1000, thin = 50, num_iterations = 10000)
     results
 end
 
-function sample(r :: SamplingResults{Metropolis}, k, n :: Int)
+function sample(r :: NonparametricSamplingResults{Metropolis}, k, n :: Int)
     v = r[k]
+    if n == 1
+        StatsBase.sample(v)
+    else
+        StatsBase.sample(v, n)
+    end
+end
+
+function sample(r :: ParametricSamplingResults{Metropolis}, k, n :: Int)
+    v = getsampled(r, k)
     if n == 1
         StatsBase.sample(v)
     else
@@ -234,5 +243,6 @@ function mh(f :: F, qs :: A; params = (), burn = 100, thin = 10, num_iterations 
     results
 end
 
+export Metropolis
 export propose, is_symmetric
 export mh_step, mh, metropolis_results
