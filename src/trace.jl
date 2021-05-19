@@ -35,11 +35,11 @@ const INPUT = Input()
         last_interpretation :: Interpretation
     end
 """
-mutable struct Node{A, D, T, P}
+mutable struct Node{A, D, T}
     address :: A
     dist :: D
     value :: Maybe{T}
-    logprob :: P
+    logprob :: Float64
     logprob_sum :: Float64
     observed :: Bool
     pa :: Array{Node, 1}
@@ -54,7 +54,7 @@ end
 Outer constructor for `Node` where no data is passed during construction. 
 """
 function node(T :: DataType, address :: A, dist :: D, is_obs :: Bool, i :: Interpretation) where {A, D}
-    Node{A, D, T, Float64}(address, dist, nothing, 0.0, 0.0, is_obs, Array{Node, 1}(), Array{Node, 1}(), i, i)
+    Node{A, D, T}(address, dist, nothing, 0.0, 0.0, is_obs, Array{Node, 1}(), Array{Node, 1}(), i, i)
 end
 
 @doc raw"""
@@ -65,14 +65,15 @@ Outer constructor for `Node` where data is passed during construction. Data type
 function node(value, address :: A, dist :: D, is_obs :: Bool, i :: Interpretation) where {A, D}
     T = typeof(value)
     lp = logpdf(dist, value)
-    P = typeof(lp)
-    Node{A, D, T, P}(address, dist, value, lp, sum(lp), is_obs, Array{Node, 1}(), Array{Node, 1}(), i, i)
+    Node{A, D, T}(address, dist, value, lp, lp, is_obs, Array{Node, 1}(), Array{Node, 1}(), i, i)
 end
 
 Distributions.logpdf(::Input, value) = 0.0
 
+abstract type Trace end
+
 @doc raw"""
-    mutable struct Trace
+    mutable struct UntypedTrace
         trace :: OrderedDict{Any, Node}
         logprob_sum :: Float64
     end
@@ -80,8 +81,13 @@ Distributions.logpdf(::Input, value) = 0.0
 `Trace`s support the following `Base` methods: `setindex!`, `getindex`,
 `keys`, `values`, and `length`.
 """
-mutable struct Trace
+mutable struct UntypedTrace <: Trace
     trace :: OrderedDict{Any, Node}
+    logprob_sum :: Float64
+end
+
+mutable struct TypedTrace{T} <: Trace
+    trace :: OrderedDict{T, Node}
     logprob_sum :: Float64
 end
 
@@ -90,7 +96,7 @@ end
 
 This is the recommended way to construct a new trace.
 """
-trace() = Trace(OrderedDict{Any, Node}(), 0.0)
+trace() = UntypedTrace(OrderedDict{Any, Node}(), 0.0)
 Base.setindex!(t :: Trace, k, v) = setindex!(t.trace, k, v)
 Base.getindex(t :: Trace, k) = t.trace[k]
 Base.values(t :: Trace) = values(t.trace)
