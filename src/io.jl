@@ -113,13 +113,13 @@ which currently stores the interpretation of the `SamplingResults` (i.e., what k
 algorithm generated those results), and a file `results.jdb`, which is a JuliaDB table
 of the results.
 """
-function load_csm(f) :: SamplingResults
+function load_csm(f) :: NonparametricSamplingResults
     interpretation = open(joinpath(f, "metadata.txt"), "r") do f
         line = readline(f)
         interpretation_string = split(line, ": ")[end]
         eval(Meta.parse(interpretation_string))
     end
-    results = SamplingResults{typeof(interpretation)}(interpretation, Float64[], [], Trace[])
+    results = NonparametricSamplingResults{typeof(interpretation)}(interpretation, Float64[], [], Trace[])
     results_table = JuliaDB.load(joinpath(f, "results.jdb"))
     for ix in 1:length(results_table)
         row = results_table[ix]

@@ -42,7 +42,7 @@ function likelihood_weighting(f :: F, params...; nsamples :: Int = 1) where F <:
     results
 end
 
-importance_sampling_results() = SamplingResults{ImportanceSampling}(IS, Array{Float64, 1}(), Array{Any, 1}(), Array{Trace, 1}())
+importance_sampling_results() = NonparametricSamplingResults{ImportanceSampling}(IS, Array{Float64, 1}(), Array{Any, 1}(), Array{Trace, 1}())
 
 @doc raw"""
     function is_step(f :: F1, q :: F2; params = ()) where {F1 <: Function, F2 <: Function}
