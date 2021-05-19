@@ -1,5 +1,5 @@
 @doc raw"""
-    function replay(f :: F, t :: Trace) where F <: Function
+    function replay(f :: F, t :: T) where {F <: Function, T <: Trace}
 
 Given a stochastic function `f` and a trace `t`, makes `sample` calls behave as though 
 they had sampled the values in `t` at the corresponding addresses. 
@@ -11,7 +11,7 @@ latent nodes in `t_new` has `interpretation = REPLAYED`.
 Calling `g(params...)` executes the computation and each latent node in `t_new` reverts to 
 its original interpretation. 
 """
-function replay(f :: F, t :: Trace) where F <: Function
+function replay(f :: F, t :: T) where {F <: Function, T <: Trace}
     t_new = deepcopy(t)
     interpret_latent!(t_new, REPLAYED)
     g(params...) = f(t_new, params...)
@@ -42,7 +42,7 @@ Given a mapping `r` from addresses to distribution-like (currently `Distribution
 or `Array{Any, 1}`s), replaces the current distributions at that set of addresses
 with this set of distributions. Returns the modified trace.
 """
-function replace(t :: Trace, r :: Dict)
+function replace(t :: T, r :: Dict) where T <: Trace
     for (a, d) in r
         old_n = deepcopy(t[a])
         t[a] = node(old_n.value, old_n.address, d, old_n.observed, old_n.interpretation)
@@ -58,7 +58,7 @@ were sampled at the addresses in the keys of `r` from the corresponding distribu
 Returns a function with call signature `g(params...)` that returns `(t :: Trace, rval)`, where `rval` 
 is the return type of `f`. 
 """
-function rewrite(f :: F, t :: Trace, r :: Dict) where F <: Function 
+function rewrite(f :: F, t :: T, r :: Dict) where {F <: Function, T <: Trace}
     function g(params...)
         new_t, h = replay(f, t)
         rval = h(params...)
@@ -80,7 +80,7 @@ is, if `f(t :: Trace, params...)`, then `g(params...)`. Computation is delayed, 
 the latent nodes in `t_new` has `interpretation = BLOCKED`. Calling `g(params...)` executes the 
 computation and each latent node in `t_new` with an address in `addresses` is removed.
 """
-function block(f :: F, t :: Trace, addresses) where F <: Function
+function block(f :: F, t :: T, addresses) where {F <: Function, T <: Trace}
     t_new = deepcopy(t)
     for a in addresses
         t_new[a].interpretation = BLOCKED

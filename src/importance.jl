@@ -9,6 +9,7 @@ const IS = ImportanceSampling()
 Outer constructor for `SamplingResults`.
 """
 likelihood_weighting_results() = NonparametricSamplingResults{LikelihoodWeighting}(LW, Array{Float64, 1}(), Array{Any, 1}(), Array{Trace, 1}())
+likelihood_weighting_results(A::DataType, D::DataType) = NonparametricSamplingResults{LikelihoodWeighting}(LW, Array{Float64, 1}(), Array{Any, 1}(), Array{TypedTrace{A, D}, 1}())
 
 @doc raw"""
     function lw_step(f :: F, params...) where F <: Function 
@@ -18,6 +19,20 @@ the log weight as equal to the likelihood. Returns a tuple (log weight, rval, tr
 """
 function lw_step(f :: F, params...) where F <: Function 
     t = trace()
+    r_n = f(t, params...)
+    logprob!(t)
+    log_w = loglikelihood(t)
+    (log_w, r_n, t)
+end
+
+@doc raw"""
+    function lw_step(f :: F, types::Tuple{DataType, DataType}, params...) where F <: Function 
+
+Perform one step of likelihood weighting -- draw a single proposal from the prior and compute 
+the log weight as equal to the likelihood. Returns a tuple (log weight, rval, trace).
+"""
+function lw_step(f :: F, types::Tuple{DataType, DataType}, params...) where F <: Function 
+    t = trace(types[1], types[2])
     r_n = f(t, params...)
     logprob!(t)
     log_w = loglikelihood(t)
@@ -42,7 +57,26 @@ function likelihood_weighting(f :: F, params...; nsamples :: Int = 1) where F <:
     results
 end
 
+@doc raw"""
+    function likelihood_weighting(f :: F, types::Tuple{DataType, DataType}, params...; nsamples :: Int = 1) where F <: Function
+
+Given a stochastic function f and arguments to the function `params...`, executes `nsamples`
+iterations of importance sampling by using the prior as a proposal distribution. The importance
+weights are given by ``\log W_n = \ell(t_n)``. Returns an `SamplingResults` instance. 
+"""
+function likelihood_weighting(f :: F, types::Tuple{DataType, DataType}, params...; nsamples :: Int = 1) where F <: Function
+    results = likelihood_weighting_results(types...)
+    for n in 1:nsamples
+        log_w, r_n, t = lw_step(f, types, params...)
+        push!(results.log_weights, log_w)
+        push!(results.return_values, r_n)
+        push!(results.traces, deepcopy(t))
+    end
+    results
+end
+
 importance_sampling_results() = NonparametricSamplingResults{ImportanceSampling}(IS, Array{Float64, 1}(), Array{Any, 1}(), Array{Trace, 1}())
+importance_sampling_results(A::DataType, D::DataType) = NonparametricSamplingResults{ImportanceSampling}(IS, Array{Float64, 1}(), Array{Any, 1}(), Array{TypedTrace{A, D}, 1}())
 
 @doc raw"""
     function is_step(f :: F1, q :: F2; params = ()) where {F1 <: Function, F2 <: Function}
@@ -63,6 +97,24 @@ function is_step(f :: F1, q :: F2; params = ()) where {F1 <: Function, F2 <: Fun
 end
 
 @doc raw"""
+    function is_step(f :: F1, q :: F2, types::Tuple{DataType,DataType}; params = ()) where {F1 <: Function, F2 <: Function}
+
+Perform one step of importance sampling -- draw a single sample from the proposal `q`, replay 
+it through `f`, and record the log weight as ``\log W_n = \log p(x, z_n) - \log q(z_n)``. Returns
+a tuple (log weight, rval, trace). 
+"""
+function is_step(f :: F1, q :: F2, types::Tuple{DataType,DataType}; params = ()) where {F1 <: Function, F2 <: Function}
+    proposed_t = trace(types[1], types[2])
+    q(proposed_t, params...)
+    logprob!(proposed_t)
+    replayed_t, g = replay(f, proposed_t)
+    r_n = g(params...)
+    logprob!(replayed_t)
+    log_w = replayed_t.logprob_sum - proposed_t.logprob_sum
+    (log_w, r_n, deepcopy(replayed_t))
+end
+
+@doc raw"""
     function importance_sampling(f :: F1, q :: F2; params = (), nsamples :: Int = 1) where {F1 <: Function, F2 <: Function}
 
 Given a stochastic function `f`, a proposal function `q`, and a tuple of `params` to pass to `f` and `q`,
@@ -73,6 +125,24 @@ function importance_sampling(f :: F1, q :: F2; params = (), nsamples :: Int = 1)
     results = importance_sampling_results()
     for n in 1:nsamples
         log_w, r_n, t = is_step(f, q; params = params)
+        push!(results.log_weights, log_w)
+        push!(results.return_values, r_n)
+        push!(results.traces, t)
+    end
+    results
+end
+
+@doc raw"""
+    function importance_sampling(f :: F1, q :: F2; params = (), nsamples :: Int = 1) where {F1 <: Function, F2 <: Function}
+
+Given a stochastic function `f`, a proposal function `q`, and a tuple of `params` to pass to `f` and `q`,
+compute `nsamples` iterations of importance sampling. `q` must have the same input signature 
+as `f`. Returns a `SamplingResults` instance.
+"""
+function importance_sampling(f :: F1, q :: F2, types::Tuple{DataType,DataType}; params = (), nsamples :: Int = 1) where {F1 <: Function, F2 <: Function}
+    results = importance_sampling_results(types...)
+    for n in 1:nsamples
+        log_w, r_n, t = is_step(f, q, types; params = params)
         push!(results.log_weights, log_w)
         push!(results.return_values, r_n)
         push!(results.traces, t)

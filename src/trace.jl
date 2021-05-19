@@ -21,6 +21,8 @@ const PROPOSED = Proposed()
 const EMPIRICAL = Empirical()
 const INPUT = Input()
 
+abstract type Node end
+
 @doc raw"""
     mutable struct Node{A, D, T, P}
         address :: A
@@ -35,9 +37,22 @@ const INPUT = Input()
         last_interpretation :: Interpretation
     end
 """
-mutable struct Node{A, D, T}
+mutable struct ParametricNode{A, D, T} <: Node
     address :: A
     dist :: D
+    value :: Maybe{T}
+    logprob :: Float64
+    logprob_sum :: Float64
+    observed :: Bool
+    pa :: Array{Node, 1}
+    ch :: Array{Node, 1}
+    interpretation :: Union{Interpretation, Vector{Interpretation}}
+    last_interpretation :: Union{Interpretation, Vector{Interpretation}}
+end
+
+mutable struct SampleableNode{A, T} <: Node
+    address :: A
+    dist :: Sampleable
     value :: Maybe{T}
     logprob :: Float64
     logprob_sum :: Float64
@@ -54,7 +69,16 @@ end
 Outer constructor for `Node` where no data is passed during construction. 
 """
 function node(T :: DataType, address :: A, dist :: D, is_obs :: Bool, i :: Interpretation) where {A, D}
-    Node{A, D, T}(address, dist, nothing, 0.0, 0.0, is_obs, Array{Node, 1}(), Array{Node, 1}(), i, i)
+    ParametricNode{A, D, T}(address, dist, nothing, 0.0, 0.0, is_obs, Array{Node, 1}(), Array{Node, 1}(), i, i)
+end
+
+@doc raw"""
+    function node(T :: DataType, address :: A, dist :: D, is_obs :: Bool, i :: Interpretation) where {A, D}
+
+Outer constructor for `Node` where no data is passed during construction. 
+"""
+function node(T :: DataType, address :: A, dist :: D, is_obs :: Bool, i :: Interpretation) where {A, D <: Sampleable}
+    SampleableNode{A, T}(address, dist, nothing, 0.0, 0.0, is_obs, Array{Node, 1}(), Array{Node, 1}(), i, i)
 end
 
 @doc raw"""
@@ -65,7 +89,18 @@ Outer constructor for `Node` where data is passed during construction. Data type
 function node(value, address :: A, dist :: D, is_obs :: Bool, i :: Interpretation) where {A, D}
     T = typeof(value)
     lp = logpdf(dist, value)
-    Node{A, D, T}(address, dist, value, lp, lp, is_obs, Array{Node, 1}(), Array{Node, 1}(), i, i)
+    ParametricNode{A, D, T}(address, dist, value, lp, lp, is_obs, Array{Node, 1}(), Array{Node, 1}(), i, i)
+end
+
+@doc raw"""
+    function node(value, address :: A, dist :: D, is_obs :: Bool, i :: Interpretation) where {A, D}
+
+Outer constructor for `Node` where data is passed during construction. Data type is inferred from the passed data.
+"""
+function node(value, address :: A, dist :: D, is_obs :: Bool, i :: Interpretation) where {A, D <: Sampleable}
+    T = typeof(value)
+    lp = logpdf(dist, value)
+    SampleableNode{A, T}(address, dist, value, lp, lp, is_obs, Array{Node, 1}(), Array{Node, 1}(), i, i)
 end
 
 Distributions.logpdf(::Input, value) = 0.0
@@ -86,8 +121,8 @@ mutable struct UntypedTrace <: Trace
     logprob_sum :: Float64
 end
 
-mutable struct TypedTrace{T} <: Trace
-    trace :: OrderedDict{T, Node}
+mutable struct TypedTrace{A, T} <: Trace
+    trace :: OrderedDict{A, SampleableNode{A, T}}
     logprob_sum :: Float64
 end
 
@@ -97,6 +132,8 @@ end
 This is the recommended way to construct a new trace.
 """
 trace() = UntypedTrace(OrderedDict{Any, Node}(), 0.0)
+trace(A::DataType, T::DataType) = TypedTrace(OrderedDict{A, SampleableNode{A, T}}(), 0.0)
+
 Base.setindex!(t :: Trace, k, v) = setindex!(t.trace, k, v)
 Base.getindex(t :: Trace, k) = t.trace[k]
 Base.values(t :: Trace) = values(t.trace)
@@ -507,7 +544,8 @@ function Base.show(io::IO, t::Trace)
 end
 
 
-export Node, node, Trace, trace, logprob, logprob!, sample, observe, input, loglikelihood, prior, aic
+export Node, ParametricNode, SampleableNode, node
+export Trace, UntypedTrace, TypedTrace, trace, logprob, logprob!, sample, observe, input, loglikelihood, prior, aic
 export node_info, graph, transform
 export Nonstandard, Standard, Replayed, Conditioned, Deterministic, Input, Empirical
 export NONSTANDARD, STANDARD, REPLAYED, CONDITIONED, DETERMINISTIC, INPUT, EMPIRICAL
