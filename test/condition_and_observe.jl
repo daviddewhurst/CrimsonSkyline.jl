@@ -79,3 +79,27 @@ end
     logprob!(t_new)
     @test !(:loc in keys(t_new))
 end
+
+function plate_program!(t :: Trace, data)
+    loc = sample(t, :loc, Normal())
+    scale = sample(t, :scale, Gamma(2.0, 2.0))
+    log_rate = sample(t, :log_rate, Normal(loc, scale))
+    obs = plate(t, observe, :data, Poisson(exp(log_rate)), data)
+end
+
+@testset "plate observe" begin
+    data = [1, 2, 3]
+    t = trace()
+    plate_program!(t, data)
+    @info "Trace: $t"
+    @test typeof(t[:data].value) == Vector{Int64}
+    d = Poisson(exp(t[:log_rate].value))
+    @test isapprox(t[:data].logprob_sum, sum(logpdf(d, i) for i in data))
+end
+
+@testset "plate latent" begin
+    t = trace()
+    plate(t, sample, "address", Normal(), 10)
+    @info "Trace: $t"
+    @test isapprox(t["address"].logprob_sum, sum(logpdf(Normal(), r) for r in t["address"].value))
+end

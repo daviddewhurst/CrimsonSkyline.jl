@@ -1,6 +1,6 @@
 using Test
 using Logging
-using Distributions: Normal, Poisson, Gamma, LogNormal, Bernoulli, Geometric, MvNormal, truncated, Dirichlet, Categorical
+using Distributions: Normal, Poisson, Gamma, LogNormal, Bernoulli, Geometric, MvNormal, truncated, Dirichlet, Categorical, logpdf
 using StatsBase: mean, std
 using PrettyPrint: pprintln
 using Random

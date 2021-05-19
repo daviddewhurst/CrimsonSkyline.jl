@@ -81,6 +81,11 @@ function node(T :: DataType, address :: A, dist :: D, is_obs :: Bool, i :: Inter
     SampleableNode{A, T}(address, dist, nothing, 0.0, 0.0, is_obs, Array{Node, 1}(), Array{Node, 1}(), i, i)
 end
 
+function setlp!(n::Node, lp) 
+    n.logprob = lp
+    n.logprob_sum = lp
+end
+
 @doc raw"""
     function node(value, address :: A, dist :: D, is_obs :: Bool, i :: Interpretation) where {A, D}
 
@@ -132,7 +137,7 @@ end
 This is the recommended way to construct a new trace.
 """
 trace() = UntypedTrace(OrderedDict{Any, Node}(), 0.0)
-trace(A::DataType, T::DataType) = TypedTrace(OrderedDict{A, SampleableNode{A, T}}(), 0.0)
+trace(A, T) = TypedTrace(OrderedDict{A, SampleableNode{A, T}}(), 0.0)
 
 Base.setindex!(t :: Trace, k, v) = setindex!(t.trace, k, v)
 Base.getindex(t :: Trace, k) = t.trace[k]
@@ -382,6 +387,37 @@ function sample(t :: Trace, a, d, params, i :: Nonstandard; pa = ())
     connect_pa_ch!(t, pa, a)
     s
 end
+
+function plate(t::Trace, op::F, a, d, s::Int64; pa = ()) where F<:Function
+    # set original node, will be replaced
+    op(t, a, d; pa = pa)
+    # need to sample s times
+    rvals = [rand(d) for _ in 1:s]
+    n = node(typeof(rvals), t[a].address, d, t[a].observed, t[a].interpretation)
+    lp = 0.0
+    for r in rvals
+        lp += logpdf(d, r)
+    end
+    setlp!(n, lp)
+    n.value = rvals
+    t[a] = n
+    rvals
+end
+plate(t::Trace, op::F, a, d, v::Vector{Nothing}; pa = ()) where F <: Function = plate(t, op, a, d, length(v))
+
+function plate(t::Trace, op::F, a, d, v::Vector{T}; pa = ()) where {T, F<:Function}
+    op(t, a, d, v[1]; pa = pa)  # will be overwritten, so pass the single T value
+    n = node(typeof(v), t[a].address, d, t[a].observed, t[a].interpretation)
+    lp = 0.0
+    for r in v
+        lp += logpdf(d, r)
+    end
+    setlp!(n, lp)
+    n.value = v
+    t[a] = n
+    v
+end
+export plate
 
 @doc raw"""
     function sample(t :: Trace, a, d, s, i :: Standard; pa = ())    
