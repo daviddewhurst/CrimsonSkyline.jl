@@ -4,6 +4,7 @@ using Distributions: Normal, Poisson, Gamma, LogNormal, Bernoulli, Geometric, Mv
 using StatsBase: mean, std
 using PrettyPrint: pprintln
 using Random
+using PDMats
 
 using CrimsonSkyline
 

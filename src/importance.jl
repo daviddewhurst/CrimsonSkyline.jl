@@ -125,6 +125,16 @@ function sample(r :: SamplingResults{I}, k, n :: Int) where I <: Importance
     end
 end
 
+function sample(r :: ParametricSamplingResults{I}, k, n :: Int) where I <: Importance
+    v = getsampled(r, k)
+    weights = StatsBase.Weights(normalized_weights(r))
+    if n == 1
+        StatsBase.sample(v, weights)
+    else
+        StatsBase.sample(v, weights, n)
+    end
+end
+
 export LikelihoodWeighting, ImportanceSampling
 export likelihood_weighting, importance_sampling, lw_step, is_step
 export log_evidence, normalized_weights, sample

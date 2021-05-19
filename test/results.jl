@@ -1,3 +1,11 @@
+function eye(D)
+    mat = zeros(D, D)
+    for i in 1:D
+        mat[i, i] = 1.0
+    end
+    mat
+end
+
 function normal_model(t :: Trace, data :: Vector{Float64})
     loc = sample(t, :loc, Normal(0.0, 10.0))
     scale = sample(t, :scale, LogNormal())
@@ -39,12 +47,12 @@ end
     data = randn(n) .* scale .+ loc
     dists = Dict("loc" => Normal(0.0, 10.0), "scale" => LogNormal())
 
-    results = mh(modular_normal_model; params = (data, dists))
+    @time results = mh(modular_normal_model; params = (data, dists))
     results = to_parametric(results)
     @info "On step 0, distributions are:\nloc = $(results.distributions["loc"])\nscale = $(results.distributions["scale"])\n"
     reflate!(results, Dict("loc" => 10.0, "scale" => 2.0))
 
-    niter = 50
+    niter = 25
     for i in 1:niter
         n = Int(ceil(exp(randn() * 2))) + 5
         loc += randn()
@@ -53,10 +61,36 @@ end
         data = randn(n) .* scale .+ loc
         dists = results.distributions
 
-        results = mh(modular_normal_model; params = (data, dists))
+        @time results = mh(modular_normal_model; params = (data, dists))
         results = to_parametric(results)
         @info "On step $i, distributions are:\nloc = $(results.distributions["loc"])\nscale = $(results.distributions["scale"])\n"
         reflate!(results, Dict("loc" => 10.0, "scale" => 2.0))
     end
+    
+end
 
+function modular_mv_normal_model(t :: Trace, X :: Matrix{Float64}, y::Vector{T}, dists::Dict) where T
+    beta = sample(t, "beta", dists["beta"])
+    loc = X' * beta
+    scale = sample(t, "scale", dists["scale"])
+    obs = Vector{Float64}(undef, length(y))
+    for (i, yi) in enumerate(y)
+        obs[i] = observe(t, (:obs, i), Normal(loc[i], scale), yi)
+    end
+    obs
+end
+
+@testset "parametric results 3" begin
+    d = 10
+    n = 5
+    X = randn(d, n)
+    beta = randn(d)
+    sigma = 0.25
+    y = X' * beta .+ randn(n) .* sigma
+    dists = Dict("beta" => MvNormal(d, 1.0), "scale"=>LogNormal())
+    @time results = mh(modular_mv_normal_model; params = (X, y, dists))
+    results = to_parametric(results)
+    @info "Distributions are:\nbeta = $(results.distributions["beta"])\nscale = $(results.distributions["scale"])\n"
+    reflate!(results, Dict("beta" => PDMat(2.0 .* eye(d)), "scale" => 2.0))
+    @info "After reflation, distributions are:\nbeta = $(results.distributions["beta"])\nscale = $(results.distributions["scale"])\n"
 end
