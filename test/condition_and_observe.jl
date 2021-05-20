@@ -103,3 +103,21 @@ end
     @info "Trace: $t"
     @test isapprox(t["address"].logprob_sum, sum(logpdf(Normal(), r) for r in t["address"].value))
 end
+
+@testset "plate mh inference" begin
+    data = [1, 3, 1, 5, 4]
+    results = mh(plate_program!; params = (data,))
+    @info "Single results trace: $(results.traces[end])"
+    @test typeof(results.traces[end][:data].value) == Vector{Int64}
+end
+
+@testset "plate replay" begin
+    t = trace()
+    f = (t,) -> plate(t, sample, "address", Normal(), 3)
+    plate(t, sample, "address", Normal(), 3)
+    @info "Original trace: $t"
+    (new_t, g) = replay(f, t)
+    @info "Replayed trace before function exec: $new_t"
+    g()
+    @info "Replayed trace after function exec: $new_t"
+end

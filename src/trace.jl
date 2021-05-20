@@ -291,6 +291,20 @@ function sample(t :: Trace, a, d, i :: Nonstandard; pa = ())
     s
 end
 
+function plate(t::Trace, op::F, a, d, s::Int64, i::Nonstandard; pa = ()) where F<:Function
+    n = node(Vector{eltype(d)}, a, d, false, i)
+    rvals = [rand(d) for _ in 1:s]
+    lp = 0.0
+    for r in rvals
+        lp += logpdf(d, r)
+    end
+    setlp!(n, lp)
+    n.value = rvals
+    t[a] = n
+    connect_pa_ch!(t, pa, a)
+    rvals
+end
+
 @doc raw"""
     function sample(t :: Trace, a, d, i :: Replayed; pa = ())
 
@@ -316,6 +330,21 @@ function sample(t :: Trace, a, d, i :: Replayed; pa = ())
     r
 end
 
+function plate(t::Trace, op::F, a, d, s::Int64, i::Replayed; pa = ()) where F<:Function
+    n = node(Vector{eltype(d)}, a, d, false, i)
+    last_i = t[a].last_interpretation
+    lp = 0.0
+    for r in t[a].value
+        lp += logpdf(d, r)
+    end
+    setlp!(n, lp)
+    n.value = t[a].value
+    t[a] = n
+    connect_pa_ch!(t, pa, a)
+    t[a].interpretation = last_i
+    t[a].value
+end
+
 @doc raw"""
     function sample(t :: Trace, a, d, i :: Blocked; pa = ())
 
@@ -326,6 +355,13 @@ function sample(t :: Trace, a, d, i :: Blocked; pa = ())
     s = rand(d)
     delete!(t.trace, a)
     s
+end
+
+function plate(t::Trace, op::F, a, d, s::Int64, i::Blocked; pa = ()) where F<:Function
+    n = node(Vector{eltype(d)}, a, d, false, i)
+    rvals = [rand(d) for _ in 1:s]
+    delete!(t.trace, a)
+    rvals
 end
 
 @doc raw"""
@@ -388,37 +424,6 @@ function sample(t :: Trace, a, d, params, i :: Nonstandard; pa = ())
     s
 end
 
-function plate(t::Trace, op::F, a, d, s::Int64; pa = ()) where F<:Function
-    # set original node, will be replaced
-    op(t, a, d; pa = pa)
-    # need to sample s times
-    rvals = [rand(d) for _ in 1:s]
-    n = node(typeof(rvals), t[a].address, d, t[a].observed, t[a].interpretation)
-    lp = 0.0
-    for r in rvals
-        lp += logpdf(d, r)
-    end
-    setlp!(n, lp)
-    n.value = rvals
-    t[a] = n
-    rvals
-end
-plate(t::Trace, op::F, a, d, v::Vector{Nothing}; pa = ()) where F <: Function = plate(t, op, a, d, length(v))
-
-function plate(t::Trace, op::F, a, d, v::Vector{T}; pa = ()) where {T, F<:Function}
-    op(t, a, d, v[1]; pa = pa)  # will be overwritten, so pass the single T value
-    n = node(typeof(v), t[a].address, d, t[a].observed, t[a].interpretation)
-    lp = 0.0
-    for r in v
-        lp += logpdf(d, r)
-    end
-    setlp!(n, lp)
-    n.value = v
-    t[a] = n
-    v
-end
-export plate
-
 @doc raw"""
     function sample(t :: Trace, a, d, s, i :: Standard; pa = ())    
 
@@ -432,6 +437,19 @@ function sample(t :: Trace, a, d, s, i :: Standard; pa = ())
     s
 end
 
+function plate(t::Trace, op::F, a, d, v::Vector{T}; pa = ()) where {T, F<:Function}
+    n = node(typeof(v), a, d, true, STANDARD)
+    lp = 0.0
+    for r in v
+        lp += logpdf(d, r)
+    end
+    setlp!(n, lp)
+    n.value = v
+    t[a] = n
+    connect_pa_ch!(t, pa, a)
+    v
+end
+
 @doc raw"""
     function sample(t :: Trace, a, d, i :: Union{Standard,Conditioned}; pa = ())   
 
@@ -443,6 +461,19 @@ users.
 """
 function sample(t :: Trace, a, d, i :: Union{Standard,Conditioned}; pa = ())
     n = node(t[a].value, a, d, true, i)
+    t[a] = n
+    connect_pa_ch!(t, pa, a)
+    t[a].value
+end
+
+function plate(t::Trace, op::F, a, d, s::Int64, i::Conditioned; pa = ()) where F<:Function
+    n = node(Vector{eltype(d)}, a, d, false, i)
+    lp = 0.0
+    for r in t[a].value
+        lp += logpdf(d, r)
+    end
+    setlp!(n, lp)
+    n.value = t[a].value
     t[a] = n
     connect_pa_ch!(t, pa, a)
     t[a].value
@@ -546,6 +577,16 @@ sample(t :: Trace, a, d, i :: Proposed) = sample(t, a, d, NONSTANDARD)
 Propose a value for the address `a` in trace `t` from the distribution `d`.
 """
 propose(t :: Trace, a, d) = sample(t, a, d, PROPOSED)
+
+function plate(t::Trace, op::F, a, d, s::Int64; pa = ()) where F<:Function
+    if a in keys(t)
+        plate(t, op, a, d, s, t[a].interpretation; pa = pa)
+    else
+        plate(t, op, a, d, s, NONSTANDARD; pa = pa)
+    end
+end
+plate(t::Trace, op::F, a, d, v::Vector{Nothing}; pa = ()) where F <: Function = plate(t, op, a, d, length(v); pa = pa)
+export plate
 
 @doc raw"""
     function prior(f :: F, addresses :: Union{AbstractArray, Tuple}, params...; nsamples :: Int = 1) where F <: Function
