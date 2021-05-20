@@ -24,18 +24,20 @@ const INPUT = Input()
 abstract type Node end
 
 @doc raw"""
-    mutable struct Node{A, D, T, P}
+    mutable struct ParametricNode{A, D, T} <: Node
         address :: A
         dist :: D
         value :: Maybe{T}
-        logprob :: P
+        logprob :: Float64
         logprob_sum :: Float64
         observed :: Bool
         pa :: Array{Node, 1}
         ch :: Array{Node, 1}
-        interpretation :: Interpretation
-        last_interpretation :: Interpretation
+        interpretation :: Union{Interpretation, Vector{Interpretation}}
+        last_interpretation :: Union{Interpretation, Vector{Interpretation}}
     end
+
+A `Node` that can be used with arbitrary code for which `rand` and `Distributionss.logpdf` are defined.
 """
 mutable struct ParametricNode{A, D, T} <: Node
     address :: A
@@ -50,6 +52,22 @@ mutable struct ParametricNode{A, D, T} <: Node
     last_interpretation :: Union{Interpretation, Vector{Interpretation}}
 end
 
+@doc raw"""
+    mutable struct SampleableNode{A, T} <: Node
+        address :: A
+        dist :: Sampleable
+        value :: Maybe{T}
+        logprob :: Float64
+        logprob_sum :: Float64
+        observed :: Bool
+        pa :: Array{Node, 1}
+        ch :: Array{Node, 1}
+        interpretation :: Union{Interpretation, Vector{Interpretation}}
+        last_interpretation :: Union{Interpretation, Vector{Interpretation}}
+    end
+
+A `Node` that is restricted to be used with any `Sampleable` from `Distributions.jl`.
+"""
 mutable struct SampleableNode{A, T} <: Node
     address :: A
     dist :: Sampleable
@@ -110,6 +128,12 @@ end
 
 Distributions.logpdf(::Input, value) = 0.0
 
+@doc raw"""
+    abstract type Trace end
+
+Base type for all traces. `Trace`s support the following `Base` methods: `setindex!`, `getindex`,
+`keys`, `values`, and `length`.
+"""
 abstract type Trace end
 
 @doc raw"""
@@ -118,14 +142,21 @@ abstract type Trace end
         logprob_sum :: Float64
     end
 
-`Trace`s support the following `Base` methods: `setindex!`, `getindex`,
-`keys`, `values`, and `length`.
+Trace that can hold nodes with all address and value types. 
 """
 mutable struct UntypedTrace <: Trace
     trace :: OrderedDict{Any, Node}
     logprob_sum :: Float64
 end
 
+@doc raw"""
+    mutable struct TypedTrace{A, T} <: Trace
+        trace :: OrderedDict{A, SampleableNode{A, T}}
+        logprob_sum :: Float64
+    end
+
+Trace that can hold nodes of the specific address (`A`) and value (`T`) types.
+"""
 mutable struct TypedTrace{A, T} <: Trace
     trace :: OrderedDict{A, SampleableNode{A, T}}
     logprob_sum :: Float64
@@ -137,6 +168,13 @@ end
 This is the recommended way to construct a new trace.
 """
 trace() = UntypedTrace(OrderedDict{Any, Node}(), 0.0)
+
+@doc raw"""
+    trace(A, T)
+
+This is the recommended way to construct a new typed trace.
+`A` is the address type, `T` is the value type.
+"""
 trace(A, T) = TypedTrace(OrderedDict{A, SampleableNode{A, T}}(), 0.0)
 
 Base.setindex!(t :: Trace, k, v) = setindex!(t.trace, k, v)
@@ -148,7 +186,7 @@ Base.length(t :: Trace) = length(t.trace)
 @doc raw"""
     function interpret_latent!(t :: Trace, i :: Interpretation)
 
-Changes the interpretation of all nodes in `t` to have `interpretation == i`
+Changes the interpretation of all latent nodes in `t` to have `interpretation == i`
 """
 function interpret_latent!(t :: Trace, i :: Interpretation)
     for a in keys(t)
@@ -291,6 +329,11 @@ function sample(t :: Trace, a, d, i :: Nonstandard; pa = ())
     s
 end
 
+@doc raw"""
+    function plate(t::Trace, op::F, a, d, s::Int64, i::Nonstandard; pa = ()) where F<:Function
+
+Plate over latent variables.
+"""
 function plate(t::Trace, op::F, a, d, s::Int64, i::Nonstandard; pa = ()) where F<:Function
     n = node(Vector{eltype(d)}, a, d, false, i)
     rvals = [rand(d) for _ in 1:s]
@@ -330,6 +373,12 @@ function sample(t :: Trace, a, d, i :: Replayed; pa = ())
     r
 end
 
+@doc raw"""
+    function plate(t::Trace, op::F, a, d, s::Int64, i::Replayed; pa = ()) where F<:Function
+
+Plate over replayed variables. Note that this method assumes *and does not check* that the value
+to be replayed `v` satisfies `length(v) == s`.
+"""
 function plate(t::Trace, op::F, a, d, s::Int64, i::Replayed; pa = ()) where F<:Function
     n = node(Vector{eltype(d)}, a, d, false, i)
     last_i = t[a].last_interpretation
@@ -357,6 +406,11 @@ function sample(t :: Trace, a, d, i :: Blocked; pa = ())
     s
 end
 
+@doc raw"""
+    function plate(t::Trace, op::F, a, d, s::Int64, i::Blocked; pa = ()) where F<:Function
+
+Plate over blocked variables.
+"""
 function plate(t::Trace, op::F, a, d, s::Int64, i::Blocked; pa = ()) where F<:Function
     n = node(Vector{eltype(d)}, a, d, false, i)
     rvals = [rand(d) for _ in 1:s]
@@ -437,6 +491,26 @@ function sample(t :: Trace, a, d, s, i :: Standard; pa = ())
     s
 end
 
+@doc raw"""
+    function plate(t::Trace, op::F, a, d, v::Vector{T}; pa = ()) where {T, F<:Function}
+
+Plate over observed variables, i.e., a plated component of model likelihood. `v` is the 
+vector of observations, while `op` is likely `observe`.
+
+Example usage: instead of
+
+```
+for (i, d) in enumerate(data)
+    observe(t, "data $i", Normal(loc, scale), d)
+end
+```
+
+we can write 
+
+```
+plate(t, observe, "data", Normal(loc, scale), data)
+```
+"""
 function plate(t::Trace, op::F, a, d, v::Vector{T}; pa = ()) where {T, F<:Function}
     n = node(typeof(v), a, d, true, STANDARD)
     lp = 0.0
@@ -466,6 +540,11 @@ function sample(t :: Trace, a, d, i :: Union{Standard,Conditioned}; pa = ())
     t[a].value
 end
 
+@doc raw"""
+    function plate(t::Trace, op::F, a, d, s::Int64, i::Conditioned; pa = ()) where F<:Function
+
+Plate over conditioned variables.
+"""
 function plate(t::Trace, op::F, a, d, s::Int64, i::Conditioned; pa = ()) where F<:Function
     n = node(Vector{eltype(d)}, a, d, false, i)
     lp = 0.0
@@ -578,6 +657,28 @@ Propose a value for the address `a` in trace `t` from the distribution `d`.
 """
 propose(t :: Trace, a, d) = sample(t, a, d, PROPOSED)
 
+@doc raw"""
+    function plate(t::Trace, op::F, a, d, s::Int64; pa = ()) where F<:Function
+
+Sample or observe a vector of random variables at a single site instead of multiple.
+This can speed up inference since the number of sites in the model will no longer scale
+with dataset size (though numerical value computation is still linear in dataset size).
+
+Example usage: instead of
+
+```
+vals = [sample(t, "val $i", Geometric()) for i in 1:N]
+```
+
+we can write 
+
+```
+vals = plate(t, sample, "val", Geometric(), N)
+```
+
+Mathematically, this is equivalent to the product ``p(z) = \prod_n p(z_n)``
+and treating it as the single object ``p(z)`` instead of the ``N`` objects ``p(z_n)``.
+"""
 function plate(t::Trace, op::F, a, d, s::Int64; pa = ()) where F<:Function
     if a in keys(t)
         plate(t, op, a, d, s, t[a].interpretation; pa = pa)
