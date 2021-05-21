@@ -181,7 +181,7 @@ end
 function parametric_posterior(address, dist, result :: SamplingResults)
     sd = size(dist)
     lsd = length(sd)
-    lsd > 1 && error("parametric posterior only supported for rank <= 1 tensors")
+    lsd > 1 && error("parametric posterior supported for only rank <= 1 tensors")
     etype = eltype(dist)
     if lsd == 0 && etype === Float64
         univariate_continuous_parametric_posterior(address, dist, result)
@@ -189,6 +189,8 @@ function parametric_posterior(address, dist, result :: SamplingResults)
         univariate_discrete_parametric_posterior(address, dist, result)
     elseif lsd == 1 && etype === Float64
         multivariate_continuous_parametric_posterior(address, dist, result)
+    else
+        error("Parametric posterior supported for only univariate and continuous multivariate distributions")
     end
 end 
 
@@ -196,24 +198,5 @@ univariate_continuous_parametric_posterior(address, dist, result) = insupport(di
 univariate_discrete_parametric_posterior(address, dist, result) = insupport(dist, -1) ? fit_mle(DiscreteUniform, result[address]) : fit_mle(Poisson, result[address])
 multivariate_continuous_parametric_posterior(address, dist, result) = insupport(dist, -1.0 .* ones(size(dist))) ? fit_mle(MvNormal, hcat(result[address]...)) : MvLogNormal(fit_mle(MvNormal, log.(hcat(result[address]...))))
 
-@doc raw"""
-    function reflate!(r::ParametricSamplingResults{I}, mapping::Dict) where I<:InferenceType
-
-Reflates the scale parameters of the `distributions` of `r`. The inferred scale parameters 
-approximate the true uncertainty of the posterior distribution under the critical assumption
-that the data generating process (DGP) remains constant. When the DGP is nonstationary,
-it is necessary to intervene and increase the value of the scale parameters to properly 
-account for uncertainty. `mapping` is a dict of `address => value` where `value` is either
-a float or a positive definite matrix depending on if the distribution associated with `address`
-is scalar- or vector-valued. 
-"""
-function reflate!(r::ParametricSamplingResults{I}, mapping::Dict) where I<:InferenceType
-    for (a, value) in mapping
-        d = r.distributions[a]
-        p = params(d)
-        r.distributions[a] = typeof(d)(p[1], value)
-    end
-end
-
 export NonparametricSamplingResults, sample, aic
-export to_parametric, getsampled, reflate!
+export to_parametric, getsampled

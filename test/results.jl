@@ -33,10 +33,7 @@ function modular_normal_model(t :: Trace, data :: Vector{Float64}, dists::Dict)
     loc = sample(t, "loc", dists["loc"])
     scale = sample(t, "scale", dists["scale"])
     obs = Vector{Float64}(undef, length(data))
-    for i in 1:length(data)
-        obs[i] = observe(t, (:obs, i), Normal(loc, scale), data[i])
-    end
-    obs
+    plate(t, observe, :obs, Normal(loc, scale), data)
 end
 
 @testset "parametric results 2" begin
@@ -93,4 +90,43 @@ end
     @info "Distributions are:\nbeta = $(results.distributions["beta"])\nscale = $(results.distributions["scale"])\n"
     reflate!(results, Dict("beta" => PDMat(2.0 .* eye(d)), "scale" => 2.0))
     @info "After reflation, distributions are:\nbeta = $(results.distributions["beta"])\nscale = $(results.distributions["scale"])\n"
+end
+
+@testset "parametric results 4: merging updates" begin
+loc = 2.0
+scale = 1.5
+n = 3
+@info "n datapoints = $n, loc = $loc and scale = $scale"
+data = randn(n) .* scale .+ loc
+@info "First dataset: $data"
+data2 = randn(n) .* scale .+ (loc + 1.0)
+@info "Second dataset: $data2"
+dists = Dict("loc" => Normal(0.0, 10.0), "scale" => LogNormal())
+
+# doing this twice, simulating two remote workers
+# first time
+@time results = mh(modular_normal_model; params = (data, dists))
+results = to_parametric(results)
+@info "From location 1, distributions are:\nloc = $(results.distributions["loc"])\nscale = $(results.distributions["scale"])\n"
+reflate!(results, Dict("loc" => 10.0, "scale" => 2.0))
+
+# second time
+@time results2 = mh(modular_normal_model; params = (data2, dists))
+results2 = to_parametric(results2)
+@info "From location 2, distributions are:\nloc = $(results2.distributions["loc"])\nscale = $(results2.distributions["scale"])\n"
+reflate!(results2, Dict("loc" => 10.0, "scale" => 2.0))
+
+# now, combine results -- this would happen at e.g. a master location
+# with results collected in a consumer queue
+relative_weights = [1.0, 1.0]
+collected_results = [results, results2]
+new_dists = combine(collected_results, relative_weights)
+@info "New dists: $new_dists"
+
+# using the updated prior for future predictions, reserving, etc
+# the new dists could be distributed to each remote location
+data3 = randn(n) .* scale .+ (loc + 0.7)
+@time results_3 = mh(modular_normal_model; params = (data3, new_dists))
+results_3 = to_parametric(results_3)
+@info "Using combined priors and after inference, updated distributions are:\nloc = $(results_3.distributions["loc"])\nscale = $(results_3.distributions["scale"])\n"
 end
