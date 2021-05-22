@@ -15,28 +15,7 @@ function sample(r :: SamplingResults{Nested}, k, n :: Int)
 end
 
 @doc raw"""
-    function rejection(f :: F, log_l :: Float64, params...) where F <: Function
-
-Samples from the prior with the hard likelihood constraint ``\log L_k > `` `log_l`.
-
-Args:
-+ `f` stochastic function. Must have signature `f(t :: Trace, params...)`
-+ `log_l`: current log likelihood threshold 
-+ `params`: any additional arguments to pass to `f`
-"""
-function rejection(f :: F, log_l :: Float64, params...) where F <: Function
-    this_log_l = log_l
-    local new_t
-    while this_log_l <= log_l
-        new_t = trace()
-        f(new_t, params...)
-        this_log_l = loglikelihood(new_t)
-    end
-    (new_t, this_log_l)
-end
-
-@doc raw"""
-    function nested(f :: F1, replace_fn :: F2; params = (), num_points :: Int64 = 1) where {F1 <: Function, F2 <: Function}
+    function nested(f, replace_fn; params = (), num_points :: Int64 = 1)
 
 Generic implementation of nested sampling (Skilling, Nested sampling for general Bayesian computation, Bayesian Analysis, 2006).
 The number of sampling iterations is a function of `num_points` aka ``N``, and the empirical entropy of the sampling distribution, given at the
@@ -51,7 +30,7 @@ Args:
 + `params`: any parameters to pass to `f`
 + `num_points`: the number of likelihood points to keep track of
 """
-function nested(f :: F1, replace_fn :: F2; params = (), num_points :: Int64 = 1) where {F1 <: Function, F2 <: Function}
+function nested(f, replace_fn; params = (), num_points :: Int64 = 1)
     traces = [trace() for _ in 1:num_points]
     for t in traces
         f(t, params...)
@@ -103,10 +82,10 @@ function nested(f :: F1, replace_fn :: F2; params = (), num_points :: Int64 = 1)
 end
 
 @doc raw"""
-    nested(f :: F; params = (), num_points :: Int64 = 1) where F <: Function
+    nested(f; params = (), num_points :: Int64 = 1)
 
 Run nested sampling using internal rejection method.
 """
-nested(f :: F; params = (), num_points :: Int64 = 1) where F <: Function = nested(f, rejection; params = params, num_points = num_points)
+nested(f; params = (), num_points :: Int64 = 1) = nested(f, rejection; params = params, num_points = num_points)
 
 export nested, sample

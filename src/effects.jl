@@ -1,5 +1,5 @@
 @doc raw"""
-    function replay(f :: F, t :: T) where {F <: Function, T <: Trace}
+    function replay(f, t :: T) where T <: Trace
 
 Given a stochastic function `f` and a trace `t`, makes `sample` calls behave as though 
 they had sampled the values in `t` at the corresponding addresses. 
@@ -11,7 +11,7 @@ latent nodes in `t_new` has `interpretation = REPLAYED`.
 Calling `g(params...)` executes the computation and each latent node in `t_new` reverts to 
 its original interpretation. 
 """
-function replay(f :: F, t :: T) where {F <: Function, T <: Trace}
+function replay(f, t :: T) where T <: Trace
     t_new = deepcopy(t)
     interpret_latent!(t_new, REPLAYED)
     g(params...) = f(t_new, params...)
@@ -19,14 +19,14 @@ function replay(f :: F, t :: T) where {F <: Function, T <: Trace}
 end
 
 @doc raw"""
-    function replace(f :: F, r :: Dict) where F <: Function
+    function replace(f, r :: Dict)
 
 Given a mapping `r` from addresses to distribution-like (currently `Distributions`
 or `Array{Any, 1}`s), replaces the current distributions at that set of addresses
 with this set of distributions. Returns a function `g` that has return signature 
 `(t :: Trace, rval)` where `rval` is a return value of `f`.
 """
-function replace(f :: F, r :: Dict) where F <: Function
+function replace(f, r :: Dict)
     function g(t :: Trace, params...)
         rval = f(t, params...)
         t = replace(t, r)
@@ -51,14 +51,14 @@ function replace(t :: T, r :: Dict) where T <: Trace
 end
 
 @doc raw"""
-    function rewrite(f :: F, t :: Trace, r :: Dict) where F <: Function 
+    function rewrite(f, t :: T, r :: Dict) where T <: Trace
 
 Rewrites the history of the trace to make it appear as if the values in the trace
 were sampled at the addresses in the keys of `r` from the corresponding distributions in the values of `r`. 
 Returns a function with call signature `g(params...)` that returns `(t :: Trace, rval)`, where `rval` 
 is the return type of `f`. 
 """
-function rewrite(f :: F, t :: T, r :: Dict) where {F <: Function, T <: Trace}
+function rewrite(f, t :: T, r :: Dict) where T <: Trace
     function g(params...)
         new_t, h = replay(f, t)
         rval = h(params...)
@@ -69,7 +69,7 @@ function rewrite(f :: F, t :: T, r :: Dict) where {F <: Function, T <: Trace}
 end
 
 @doc raw"""
-    function block(f :: F, t :: Trace, addresses) where F <: Function
+    function block(f, t :: T, addresses) where T <: Trace
 
 Given a stochastic function `f`, a trace `t`, and an iterable of addresses, converts traced
 randomness into untraced randomness. 
@@ -80,7 +80,7 @@ is, if `f(t :: Trace, params...)`, then `g(params...)`. Computation is delayed, 
 the latent nodes in `t_new` has `interpretation = BLOCKED`. Calling `g(params...)` executes the 
 computation and each latent node in `t_new` with an address in `addresses` is removed.
 """
-function block(f :: F, t :: T, addresses) where {F <: Function, T <: Trace}
+function block(f, t :: T, addresses) where T <: Trace
     t_new = deepcopy(t)
     for a in addresses
         t_new[a].interpretation = BLOCKED
@@ -89,7 +89,7 @@ function block(f :: F, t :: T, addresses) where {F <: Function, T <: Trace}
     (t_new, g)
 end
 
-function block(f::F, addresses) where F <: Function
+function block(f, addresses)
     function g(t::Trace, params...)
         r = f(t, params...)
         for a in addresses
@@ -106,17 +106,17 @@ end
 
 Converts all traced randomness into untraced randomness.
 """
-block(f :: F, t :: Trace) where F <: Function = block(f, t, keys(t))
+block(f, t :: Trace) = block(f, t, keys(t))
 
 @doc raw"""
-    function update(f :: F, r :: SamplingResults{I}) where {F <: Function, I <: InferenceType}
+    function update(f, r :: SamplingResults{I}) where I <: InferenceType
 
 Given a stochastic function `f` and a `SamplingResults` `r`, update the prior 
 predictive to the posterior predictive by jointly replacing all latent sample sites with the joint empirical 
 posterior. Returns a stochastic function `g` with the same call signature as `f`. This function will modify in 
 place the trace passed into it as the first argument.
 """
-function update(f :: F, r :: SamplingResults{I}) where {F <: Function, I <: InferenceType}
+function update(f, r :: SamplingResults{I}) where I <: InferenceType
     function g(t :: Trace, params...)
         t_sampled = StatsBase.sample(r.traces)  # maintains correct dims throughout
         kts = keys(t_sampled)
@@ -137,14 +137,14 @@ function update(f :: F, r :: SamplingResults{I}) where {F <: Function, I <: Infe
 end
 
 @doc raw"""
-    function condition(f :: F, evidence :: Dict) where F <: Function
+    function condition(f, evidence :: Dict)
 
 Condition a trace modified by `f` on `evidence`, which maps addresses to observed 
 evidence associated with that address. Returns a function with call signature 
 identical to that of `f` and return signature `(t :: Trace, rtype)` where `rtype`
 is the return type of `f`.
 """
-function condition(f :: F, evidence :: Dict) where F <: Function
+function condition(f, evidence :: Dict)
     function g(t :: Trace, params...)
         for (a, e) in evidence
             t[a] = node(e, a, [CONDITIONED], true, CONDITIONED)

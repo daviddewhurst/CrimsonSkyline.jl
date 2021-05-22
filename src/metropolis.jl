@@ -62,14 +62,14 @@ function accept(t :: Trace, new_t :: Trace, log_a :: Float64)
 end
 
 @doc raw"""
-    function mh_step(t :: Trace, f :: F; params = (), return_val :: Bool = false) where F <: Function 
+    function mh_step(t :: Trace, f; params = (), return_val :: Bool = false)
 
 An independent prior sample Metropolis step.
 
 Given a trace `t` and stochatic function `f` depending on `params...`, generates proposals 
 from prior draws and accepts based on the likelihood ratio.
 """
-function mh_step(t :: Trace, f :: F; params = (), return_val :: Bool = false) where F <: Function 
+function mh_step(t :: Trace, f; params = (), return_val :: Bool = false)
     new_t = trace()
     r = f(new_t, params...)
     log_a = log_acceptance_ratio(t, new_t, PRIOR)
@@ -82,14 +82,14 @@ function mh_step(t :: Trace, f :: F; params = (), return_val :: Bool = false) wh
 end
 
 @doc raw"""
-    function mh_step(t :: Trace, f :: F, types::Tuple{DataType, DataType}; params = (), return_val :: Bool = false) where F <: Function 
+    function mh_step(t :: Trace, f, types::Tuple{DataType, DataType}; params = (), return_val :: Bool = false)
 
 An independent prior sample Metropolis step.
 
-Given a trace `t` and stochatic function `f` depending on `params...`, generates proposals 
+Given a trace `t` and stochastic function `f` depending on `params...`, generates proposals 
 from prior draws and accepts based on the likelihood ratio.
 """
-function mh_step(t :: Trace, f :: F, types::Tuple{DataType, DataType}; params = (), return_val :: Bool = false) where F <: Function 
+function mh_step(t :: Trace, f, types::Tuple{DataType, DataType}; params = (), return_val :: Bool = false)
     new_t = trace(types[1], types[2])
     r = f(new_t, params...)
     log_a = log_acceptance_ratio(t, new_t, PRIOR)
@@ -102,7 +102,7 @@ function mh_step(t :: Trace, f :: F, types::Tuple{DataType, DataType}; params = 
 end
 
 @doc raw"""
-    function mh(f :: F; params = (), burn = 100, thin = 10, num_iterations = 10000) where F <: Function 
+    function mh(f; params = (), burn = 1000, thin = 50, num_iterations = 10000)
 
 Generic Metropolis algorithm using draws from the prior.
 
@@ -114,7 +114,7 @@ Args:
 + `thin`: keep only every `thin`-th draw. E.g., if `thin = 100`, only every 100-th trace will be kept.
 + `num_iterations`: total number of steps to take in the markov chain
 """
-function mh(f :: F; params = (), burn = 1000, thin = 50, num_iterations = 10000) where F <: Function 
+function mh(f; params = (), burn = 1000, thin = 50, num_iterations = 10000)
     results = metropolis_results()
     t = trace()
     r = f(t, params...)
@@ -130,7 +130,7 @@ function mh(f :: F; params = (), burn = 1000, thin = 50, num_iterations = 10000)
 end
 
 @doc raw"""
-    function mh(f :: F types::Tuple{DataType, DataType}; params = (), burn = 1000, thin = 50, num_iterations = 10000) where F <: Function 
+    function mh(f, types::Tuple{DataType, DataType}; params = (), burn = 1000, thin = 50, num_iterations = 10000)
 
 Generic Metropolis algorithm using draws from the prior.
 
@@ -142,7 +142,7 @@ Args:
 + `thin`: keep only every `thin`-th draw. E.g., if `thin = 100`, only every 100-th trace will be kept.
 + `num_iterations`: total number of steps to take in the markov chain
 """
-function mh(f :: F, types::Tuple{DataType, DataType}; params = (), burn = 1000, thin = 50, num_iterations = 10000) where F <: Function 
+function mh(f, types::Tuple{DataType, DataType}; params = (), burn = 1000, thin = 50, num_iterations = 10000)
     results = metropolis_results(types...)
     t = trace(types...)
     r = f(t, params...)
@@ -222,7 +222,7 @@ end
 # function q(old_trace :: Trace, new_trace :: Trace, params...)
 
 @doc raw"""
-    function mh_step(t :: Trace, f :: F1, q :: F2; params = ()) where {F1 <: Function, F2 <: Function}
+    function mh_step(t :: Trace, f, q; params = (), return_val :: Bool = false)
 
 A generic Metropolis step using an arbitrary proposal kernel. 
 
@@ -234,7 +234,7 @@ accepts based on the log acceptance probability:
 \log \alpha = \log p(t_{\text{new}}) - \log q(t_{\text{new}}|t_{\text{old}}) - [\log p(t_{\text{old}}) - \log q(t_{\text{old}} | t_{\text{new}})].
 ``
 """
-function mh_step(t :: Trace, f :: F1, q :: F2; params = (), return_val :: Bool = false) where {F1 <: Function, F2 <: Function}
+function mh_step(t :: Trace, f, q; params = (), return_val :: Bool = false)
     new_t = trace()
     f(new_t, params...)
     copy_common!(t, new_t)
@@ -255,7 +255,7 @@ function mh_step(t :: Trace, f :: F1, q :: F2; params = (), return_val :: Bool =
 end
 
 @doc raw"""
-    function mh_step(t :: Trace, f :: F1, q :: F2, types::Tuple{DataType,DataType}; params = (), return_val :: Bool = false) where {F1 <: Function, F2 <: Function}
+    function mh_step(t :: Trace, f, q, types::Tuple{DataType,DataType}; params = (), return_val :: Bool = false)
 
 A generic Metropolis step using an arbitrary proposal kernel. 
 
@@ -267,7 +267,7 @@ accepts based on the log acceptance probability:
 \log \alpha = \log p(t_{\text{new}}) - \log q(t_{\text{new}}|t_{\text{old}}) - [\log p(t_{\text{old}}) - \log q(t_{\text{old}} | t_{\text{new}})].
 ``
 """
-function mh_step(t :: Trace, f :: F1, q :: F2, types::Tuple{DataType,DataType}; params = (), return_val :: Bool = false) where {F1 <: Function, F2 <: Function}
+function mh_step(t :: Trace, f, q, types::Tuple{DataType,DataType}; params = (), return_val :: Bool = false)
     new_t = trace(types[1], types[2])
     f(new_t, params...)
     copy_common!(t, new_t)
@@ -288,7 +288,7 @@ function mh_step(t :: Trace, f :: F1, q :: F2, types::Tuple{DataType,DataType}; 
 end
 
 @doc raw"""
-    function mh(f :: F, qs :: A; params = (), burn = 100, thin = 10, num_iterations = 10000, inverse_verbosity = 100) where {F <: Function, A <: AbstractArray}
+    function mh(f, qs :: A; params = (), burn = 100, thin = 10, num_iterations = 10000, inverse_verbosity = 100) where A <: AbstractArray
 
 Generic Metropolis algorithm using user-defined proposal kernels.
 
@@ -304,7 +304,7 @@ Args:
 + `num_iterations`: total number of steps to take in the markov chain
 + `inverse_verbosity`: every `inverse_verbosity` iterations, a stattus report will be logged.
 """
-function mh(f :: F, qs :: A; params = (), burn = 100, thin = 10, num_iterations = 10000, inverse_verbosity = 100) where {F <: Function, A <: AbstractArray}
+function mh(f, qs :: A; params = (), burn = 100, thin = 10, num_iterations = 10000, inverse_verbosity = 100) where A <: AbstractArray
     results = metropolis_results()
     t = trace()
     f(t, params...)
@@ -326,7 +326,7 @@ function mh(f :: F, qs :: A; params = (), burn = 100, thin = 10, num_iterations 
 end
 
 @doc raw"""
-    function mh(f :: F, qs :: A, types::Tuple{DataType,DataType}; params = (), burn = 100, thin = 10, num_iterations = 10000, inverse_verbosity = 100) where {F <: Function, A <: AbstractArray}
+    function mh(f, qs :: A, types::Tuple{DataType,DataType}; params = (), burn = 100, thin = 10, num_iterations = 10000, inverse_verbosity = 100) where A <: AbstractArray
 
 Generic Metropolis algorithm using user-defined proposal kernels.
 
@@ -342,7 +342,7 @@ Args:
 + `num_iterations`: total number of steps to take in the markov chain
 + `inverse_verbosity`: every `inverse_verbosity` iterations, a stattus report will be logged.
 """
-function mh(f :: F, qs :: A, types::Tuple{DataType,DataType}; params = (), burn = 100, thin = 10, num_iterations = 10000, inverse_verbosity = 100) where {F <: Function, A <: AbstractArray}
+function mh(f, qs :: A, types::Tuple{DataType,DataType}; params = (), burn = 100, thin = 10, num_iterations = 10000, inverse_verbosity = 100) where A <: AbstractArray
     results = metropolis_results(types...)
     t = trace(types...)
     f(t, params...)

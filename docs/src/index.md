@@ -192,6 +192,12 @@ Modules = [CrimsonSkyline]
 Pages = ["results.jl"]
 ```
 
+## online
+```@autodocs
+Modules = [CrimsonSkyline]
+Pages = ["online.jl"]
+```
+
 ## Index
 ```@index
 ```

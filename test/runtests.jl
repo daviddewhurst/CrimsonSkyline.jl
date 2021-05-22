@@ -10,11 +10,11 @@ using CrimsonSkyline
 
 Random.seed!(2021)
 
-#include("basic.jl")
-#include("condition_and_observe.jl")
-#include("io.jl")
-#include("importance_sampling.jl")
-#include("metropolis.jl")
-#include("nested.jl")
+include("basic.jl")
+include("condition_and_observe.jl")
+include("io.jl")
+include("importance_sampling.jl")
+include("metropolis.jl")
+include("nested.jl")
 include("results.jl")
-#include("typed_trace.jl")
+include("typed_trace.jl")

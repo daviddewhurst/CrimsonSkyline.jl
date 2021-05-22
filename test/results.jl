@@ -120,12 +120,13 @@ reflate!(results2, Dict("loc" => 10.0, "scale" => 2.0))
 # with results collected in a consumer queue
 relative_weights = [1.0, 1.0]
 collected_results = [results, results2]
-new_dists = combine(collected_results, relative_weights)
+@time new_dists = combine(collected_results, relative_weights)
 @info "New dists: $new_dists"
 
 # using the updated prior for future predictions, reserving, etc
 # the new dists could be distributed to each remote location
-data3 = randn(n) .* scale .+ (loc + 0.7)
+data3 = randn(5) .* scale .+ -1.5
+@info "Third dataset: $data3"
 @time results_3 = mh(modular_normal_model; params = (data3, new_dists))
 results_3 = to_parametric(results_3)
 @info "Using combined priors and after inference, updated distributions are:\nloc = $(results_3.distributions["loc"])\nscale = $(results_3.distributions["scale"])\n"

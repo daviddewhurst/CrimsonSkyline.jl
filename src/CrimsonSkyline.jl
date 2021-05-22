@@ -16,13 +16,14 @@ using Logging
 using JuliaDB
 
 include("util.jl")
-
 include("trace.jl")
 
 include("results.jl")
 include("online.jl")
 
 include("effects.jl")
+
+include("rejection.jl")
 include("importance.jl")
 include("metropolis.jl")
 include("nested.jl")
