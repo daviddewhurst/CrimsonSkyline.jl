@@ -13,7 +13,7 @@ end
     @info "True scale = $true_scale"
     n_dpts = 10
     data = true_loc .+ true_scale .* randn(n_dpts)
-    prior_samples = prior(normal_model, (:loc, :scale), data; nsamples = 100)
+    prior_samples = forward_sampling(normal_model; params = (data,), num_iterations = 100)
     @info "Prior E[loc] = $(mean(prior_samples[:loc]))"
     @info "Prior E[scale] = $(mean(prior_samples[:scale]))"
 
@@ -41,7 +41,7 @@ end
     @info "True scale = $true_scale"
     n_dpts = 10
     data = true_loc .+ true_scale .* randn(n_dpts)
-    prior_samples = prior(normal_model, (:loc, :scale), data; nsamples = 100)
+    prior_samples = forward_sampling(normal_model; params = (data,), num_iterations = 100)
     @info "Prior E[loc] = $(mean(prior_samples[:loc]))"
     @info "Prior E[scale] = $(mean(prior_samples[:scale]))"
 

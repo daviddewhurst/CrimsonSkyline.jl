@@ -84,7 +84,7 @@ function plate_program!(t :: Trace, data)
     loc = sample(t, :loc, Normal())
     scale = sample(t, :scale, Gamma(2.0, 2.0))
     log_rate = sample(t, :log_rate, Normal(loc, scale))
-    obs = plate(t, observe, :data, Poisson(exp(log_rate)), data)
+    plate(t, observe, :data, Poisson(exp(log_rate)), data)
 end
 
 @testset "plate observe" begin

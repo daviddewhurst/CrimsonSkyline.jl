@@ -23,6 +23,7 @@ include("online.jl")
 
 include("effects.jl")
 
+include("forward.jl")
 include("rejection.jl")
 include("importance.jl")
 include("metropolis.jl")

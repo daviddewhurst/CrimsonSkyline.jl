@@ -689,30 +689,6 @@ end
 plate(t::Trace, op::F, a, d, v::Vector{Nothing}; pa = ()) where F <: Function = plate(t, op, a, d, length(v); pa = pa)
 export plate
 
-@doc raw"""
-    function prior(f :: F, addresses :: Union{AbstractArray, Tuple}, params...; nsamples :: Int = 1) where F <: Function
-
-Given a generative function `f`, an array-like of addresses, and a collection of parameters to
-pass to `f`, runs `nsamples` evaluations of the `f`, collecting the values from the `addresses`
-and returning a `Dict` mapping addresses to values. 
-"""
-function prior(f :: F, addresses :: Union{AbstractArray, Tuple}, params...; nsamples :: Int = 1) where F <: Function
-    d = Dict(a => [] for a in addresses)
-    t = trace()
-    for n in 1:nsamples
-        f(t, params...)
-        kk = keys(t)
-        for a in addresses
-            if a in kk
-                push!(d[a], t[a].value)
-            else
-                push!(d[a], nothing)
-            end
-        end
-    end
-    d
-end
-
 function Base.show(io::IO, t::Trace)
     s = "\nTrace with $(length(t)) nodes:"
     for node in values(t)
@@ -723,7 +699,7 @@ end
 
 
 export Node, ParametricNode, SampleableNode, node
-export Trace, UntypedTrace, TypedTrace, trace, logprob, logprob!, sample, observe, input, loglikelihood, prior, aic
+export Trace, UntypedTrace, TypedTrace, trace, logprob, logprob!, sample, observe, input, loglikelihood, aic
 export node_info, graph, transform
 export Nonstandard, Standard, Replayed, Conditioned, Deterministic, Input, Empirical
 export NONSTANDARD, STANDARD, REPLAYED, CONDITIONED, DETERMINISTIC, INPUT, EMPIRICAL
