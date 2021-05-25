@@ -65,6 +65,14 @@ Modules = [CrimsonSkyline]
 Pages = ["effects.jl"]
 ```
 
+## basic sampling methods
+Simple samplers such as forward and rejection sampling can be done "by hand", but
+convenience methods are implemented to facilitate postprocessing of results.
+```@autodocs
+Modules = [CrimsonSkyline]
+Pages = ["forward.jl","rejection.jl"]
+```
+
 ## importance
 Importance sampling algorithms and utilities. 
 Currently the following importance sampling algorithms are implemented:
