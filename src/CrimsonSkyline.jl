@@ -14,6 +14,7 @@ using PrettyPrint: pprintln
 using StatsBase
 using Logging
 using JuliaDB
+using JSON
 
 include("util.jl")
 include("trace.jl")

@@ -1,10 +1,11 @@
 using Test
 using Logging
-using Distributions: Normal, Poisson, Gamma, LogNormal, Bernoulli, Geometric, MvNormal, truncated, Dirichlet, Categorical, logpdf
+using Distributions: Normal, Poisson, Gamma, LogNormal, Bernoulli, Geometric, MvNormal, truncated, Dirichlet, Categorical, logpdf, MvLogNormal, DiscreteUniform, fit
 using StatsBase: mean, std
 using PrettyPrint: pprintln
 using Random
 using PDMats
+using JSON
 
 using CrimsonSkyline
 
@@ -17,5 +18,5 @@ include("forward.jl")
 include("importance_sampling.jl")
 include("metropolis.jl")
 include("nested.jl")
-include("results.jl")
+include("online.jl")
 include("typed_trace.jl")

@@ -65,4 +65,51 @@ function combine(v, pv::Vector{Float64})
 end
 combine(v) = combine(v, ones(Float64, length(v)))
 
-export reflate!, combine
+function dist_dict(r::ParametricSamplingResults)
+    dists = r.distributions
+    d = Dict()
+    for (a, dist) in dists
+        d[a] = dist_dict(dist)
+    end
+    d
+end
+dist_dict(n::Normal) = Dict("dist" => "Normal","loc" => n.μ,"scale" => n.σ)
+dist_dict(n::LogNormal) = Dict("dist" => "LogNormal","loc" => n.μ,"scale" => n.σ)
+dist_dict(p::Poisson) = Dict("dist" => "Poisson","lambda" => p.λ)
+dist_dict(d::DiscreteUniform) = Dict("dist" => "DiscreteUniform","a" => d.a,"b" => d.b)
+dist_dict(m::MvNormal) = Dict("dist"=>"MvNormal", "loc"=>m.μ, "cov"=>m.Σ)
+dist_dict(m::MvLogNormal) = Dict("dist"=>"MvLogNormal", "loc"=>m.normal.μ, "cov"=>m.normal.Σ)
+
+to_json(r::ParametricSamplingResults) = JSON.json(Dict("distributions"=>dist_dict(r), "interpretation"=>string(r.interpretation)))
+
+function dict_dist(dists::Dict)
+    d = Dict()
+    for (a, dist) in dists
+        d[a] = dict_dist(dist, dist["dist"])
+    end
+    d
+end
+function dict_dist(d::Dict, s::String)
+    if s == "Normal"
+        Normal(d["loc"], d["scale"])
+    elseif s == "LogNormal"
+        LogNormal(d["loc"], d["scale"])
+    elseif s == "Poisson"
+        Poisson(d["lambda"])
+    elseif s == "DiscreteUniform"
+        DiscreteUniform(d["a"], d["b"])
+    elseif s == "MvNormal"
+        MvNormal(d["loc"], d["cov"])
+    elseif s == "MvLogNormal"
+        MvLogNormal(MvNormal(d["loc"], d["cov"]))
+    end
+end
+
+function from_json(s::String)
+    dict = JSON.parse(s)
+    dists = dict_dist(dict["distributions"])
+    I = eval(Meta.parse(dict["interpretation"]))
+    ParametricSamplingResults{typeof(I)}(I, Float64[], [], Trace[], dists)
+end
+
+export reflate!, combine, to_json, from_json

@@ -93,41 +93,67 @@ end
 end
 
 @testset "parametric results 4: merging updates" begin
-loc = 2.0
-scale = 1.5
-n = 3
-@info "n datapoints = $n, loc = $loc and scale = $scale"
-data = randn(n) .* scale .+ loc
-@info "First dataset: $data"
-data2 = randn(n) .* scale .+ (loc + 1.0)
-@info "Second dataset: $data2"
-dists = Dict("loc" => Normal(0.0, 10.0), "scale" => LogNormal())
+    loc = 2.0
+    scale = 1.5
+    n = 3
+    @info "n datapoints = $n, loc = $loc and scale = $scale"
+    data = randn(n) .* scale .+ loc
+    @info "First dataset: $data"
+    data2 = randn(n) .* scale .+ (loc + 1.0)
+    @info "Second dataset: $data2"
+    dists = Dict("loc" => Normal(0.0, 10.0), "scale" => LogNormal())
 
-# doing this twice, simulating two remote workers
-# first time
-@time results = mh(modular_normal_model; params = (data, dists))
-results = to_parametric(results)
-@info "From location 1, distributions are:\nloc = $(results.distributions["loc"])\nscale = $(results.distributions["scale"])\n"
-reflate!(results, Dict("loc" => 10.0, "scale" => 2.0))
+    # doing this twice, simulating two remote workers
+    # first time
+    @time results = mh(modular_normal_model; params = (data, dists))
+    results = to_parametric(results)
+    @info "From location 1, distributions are:\nloc = $(results.distributions["loc"])\nscale = $(results.distributions["scale"])\n"
+    reflate!(results, Dict("loc" => 10.0, "scale" => 2.0))
 
-# second time
-@time results2 = mh(modular_normal_model; params = (data2, dists))
-results2 = to_parametric(results2)
-@info "From location 2, distributions are:\nloc = $(results2.distributions["loc"])\nscale = $(results2.distributions["scale"])\n"
-reflate!(results2, Dict("loc" => 10.0, "scale" => 2.0))
+    # second time
+    @time results2 = mh(modular_normal_model; params = (data2, dists))
+    results2 = to_parametric(results2)
+    @info "From location 2, distributions are:\nloc = $(results2.distributions["loc"])\nscale = $(results2.distributions["scale"])\n"
+    reflate!(results2, Dict("loc" => 10.0, "scale" => 2.0))
 
-# now, combine results -- this would happen at e.g. a master location
-# with results collected in a consumer queue
-relative_weights = [1.0, 1.0]
-collected_results = [results, results2]
-@time new_dists = combine(collected_results, relative_weights)
-@info "New dists: $new_dists"
+    # now, combine results -- this would happen at e.g. a master location
+    # with results collected in a consumer queue
+    relative_weights = [1.0, 1.0]
+    collected_results = [results, results2]
+    @time new_dists = combine(collected_results, relative_weights)
+    @info "New dists: $new_dists"
 
-# using the updated prior for future predictions, reserving, etc
-# the new dists could be distributed to each remote location
-data3 = randn(5) .* scale .+ -1.5
-@info "Third dataset: $data3"
-@time results_3 = mh(modular_normal_model; params = (data3, new_dists))
-results_3 = to_parametric(results_3)
-@info "Using combined priors and after inference, updated distributions are:\nloc = $(results_3.distributions["loc"])\nscale = $(results_3.distributions["scale"])\n"
+    # using the updated prior for future predictions, reserving, etc
+    # the new dists could be distributed to each remote location
+    data3 = randn(5) .* scale .+ -1.5
+    @info "Third dataset: $data3"
+    @time results_3 = mh(modular_normal_model; params = (data3, new_dists))
+    results_3 = to_parametric(results_3)
+    @info "Using combined priors and after inference, updated distributions are:\nloc = $(results_3.distributions["loc"])\nscale = $(results_3.distributions["scale"])\n"
+end
+
+@testset "distribution representation 1" begin
+    loc = 2.0
+    scale = 1.5
+    n = 3
+    @info "n datapoints = $n, loc = $loc and scale = $scale"
+    data = randn(n) .* scale .+ loc
+    @info "First dataset: $data"
+    dists = Dict("loc" => Normal(0.0, 10.0), "scale" => LogNormal())
+    @time results = mh(modular_normal_model; params = (data, dists))
+    results = to_parametric(results)
+    @info "From location 1, distributions are:\nloc = $(results.distributions["loc"])\nscale = $(results.distributions["scale"])\n"
+    compressed = to_json(results)
+    @info "Compressed results = $compressed"
+    @test typeof(compressed) == String
+
+    # now run inference with loaded results as prior
+    built = from_json(compressed)
+    @info "Built parametric results: $built"
+    reflate!(built, Dict("loc" => 10.0, "scale" => 2.0))
+    data2 = randn(5) .* scale .+ -1.5
+    @info "Second dataset: $data2"
+    @time results_2 = mh(modular_normal_model; params = (data2, built.distributions))
+    results_2 = to_parametric(results_2)
+    @info "Using priors loaded from json and after inference, updated distributions are:\nloc = $(results_2.distributions["loc"])\nscale = $(results_2.distributions["scale"])\n"
 end
