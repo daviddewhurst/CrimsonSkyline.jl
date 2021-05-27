@@ -157,3 +157,61 @@ end
     results_2 = to_parametric(results_2)
     @info "Using priors loaded from json and after inference, updated distributions are:\nloc = $(results_2.distributions["loc"])\nscale = $(results_2.distributions["scale"])\n"
 end
+
+@testset "distribution representation 2" begin
+    d = 10
+    n = 5
+    X = randn(d, n)
+    beta = randn(d)
+    sigma = 0.25
+    y = X' * beta .+ randn(n) .* sigma
+    dists = Dict("beta" => MvNormal(d, 1.0), "scale"=>LogNormal())
+    @time results = mh(modular_mv_normal_model; params = (X, y, dists))
+    results = to_parametric(results)
+    compressed = to_json(results)
+    @info "Compressed results = $compressed"
+    @test typeof(compressed) == String
+    built = from_json(compressed)
+    @info "Built parametric results: $built"
+end
+
+function beta_binomial(t, n, data, dists)
+    b = sample(t, "b", dists["b"])
+    plate(t, sample, "data", Binomial(n, b), data)
+end
+
+function branching_structure(t, data, dists)
+    b = sample(t, "b", dists["b"])
+    if b > 0.5
+        loc = sample(t, "loc", dists["loc"])
+        scale = sample(t, "scale", dists["scale"])
+        plate(t, sample, "data", Normal(loc, scale), data)
+    else
+        lambda = sample(t, "rate", dists["rate"])
+        data = convert(Vector{Int64}, data)
+        plate(t, sample, "data", Poisson(lambda), data)
+    end
+end
+
+@testset "distribution representation 3" begin
+    @warn "Testing beta-binomial parametric posterior"
+    data = [1, 3, 1, 5, 6, 3, 2, 0]
+    n = 7
+    dists = Dict("b" => Beta(2.0, 3.0))
+    @time results = mh(beta_binomial; params = (n, data, dists))
+    results = to_parametric(results)
+    @info results.distributions
+
+    @warn "Testing branching structure model"
+    data = [10.0, 20.0, 10.0, 30.0, 50.0, 20.0]
+    dists = Dict(
+        "b" => Beta(1.0, 1.0), 
+        "loc" => Normal(mean(data), std(data)),
+        "scale" => LogNormal(1.0, 1.0),
+        "rate" => Gamma(2.0, 2.0)
+    )
+    @time results = likelihood_weighting(branching_structure, data, dists; nsamples=10)
+    @info results
+    results = to_parametric(results)
+    @info results.distributions
+end

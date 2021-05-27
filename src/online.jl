@@ -99,9 +99,15 @@ function dict_dist(d::Dict, s::String)
     elseif s == "DiscreteUniform"
         DiscreteUniform(d["a"], d["b"])
     elseif s == "MvNormal"
-        MvNormal(d["loc"], d["cov"])
+        loc = convert(Vector{Float64}, d["loc"])
+        cov = convert(Matrix{Float64}, hcat(d["cov"]...))
+        cov = PDMat(cov)
+        MvNormal(loc, cov)
     elseif s == "MvLogNormal"
-        MvLogNormal(MvNormal(d["loc"], d["cov"]))
+        loc = convert(Vector{Float64}, d["loc"])
+        cov = convert(Matrix{Float64}, hcat(d["cov"]...))
+        cov = PDMat(cov)
+        MvLogNormal(MvNormal(loc, cov))
     end
 end
 

@@ -29,7 +29,15 @@ function Base.keys(r :: NonparametricSamplingResults{I}) where I <: InferenceTyp
     end
     k
 end
-Base.getindex(r :: NonparametricSamplingResults{I}, k) where I <: InferenceType = [t.trace[k].value for t in r.traces]
+function Base.getindex(r :: NonparametricSamplingResults{I}, k) where I <: InferenceType
+    results = []
+    for t in r.traces
+        if k in keys(t)
+            push!(results, t.trace[k].value)
+        end
+    end
+    convert(Vector{typeof(results[1])}, results)
+end
 Base.getindex(r :: SamplingResults{I}) where I <: InferenceType = r.return_values
 Base.length(r :: SamplingResults{I}) where I <: InferenceType = length(r.log_weights)
 
@@ -193,6 +201,11 @@ function parametric_posterior(address, dist, result :: SamplingResults)
         error("Parametric posterior supported for only univariate and continuous multivariate distributions")
     end
 end 
+
+parametric_posterior(address, dist::D, result::SamplingResults) where D <: Categorical = fit_mle(Categorical, length(dist.p), results[address])
+parametric_posterior(address, dist::D, results::SamplingResults) where D <: Beta = fit_mle(Beta, results[address])
+parametric_posterior(address, dist::D, results::SamplingResults) where D <: Dirichlet = fit_mle(Dirichlet, results[address])
+parametric_posterior(address, dist::D, results::SamplingResults) where D <: Binomial = fit_mle(Binomial, dist.n, results[address])
 
 univariate_continuous_parametric_posterior(address, dist, result) = insupport(dist, -1.0) ? fit_mle(Normal, result[address]) : fit_mle(LogNormal, result[address])
 univariate_discrete_parametric_posterior(address, dist, result) = insupport(dist, -1) ? fit_mle(DiscreteUniform, result[address]) : fit_mle(Poisson, result[address])

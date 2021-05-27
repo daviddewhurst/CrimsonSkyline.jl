@@ -15,6 +15,7 @@ using StatsBase
 using Logging
 using JuliaDB
 using JSON
+using PDMats
 
 include("util.jl")
 include("trace.jl")
