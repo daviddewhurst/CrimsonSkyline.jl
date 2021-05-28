@@ -129,7 +129,7 @@ function demo_update()
     # grab some samples from the prior
     data = randn(2) .+ 2.0
     sites = ["loc", "log_scale"]
-    prior_samples = prior(normal_model, sites, data, false; nsamples = 100)
+    prior_samples = forward_sampling(normal_model; params = (data, false), num_iterations = 100)
     for site in sites
         @info "Prior mean $site: $(mean(prior_samples[site]))"
         @info "Prior std $site: $(std(prior_samples[site]))"
