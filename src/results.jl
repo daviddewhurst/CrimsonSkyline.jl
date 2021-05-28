@@ -212,4 +212,4 @@ univariate_discrete_parametric_posterior(address, dist, result) = insupport(dist
 multivariate_continuous_parametric_posterior(address, dist, result) = insupport(dist, -1.0 .* ones(size(dist))) ? fit_mle(MvNormal, hcat(result[address]...)) : MvLogNormal(fit_mle(MvNormal, log.(hcat(result[address]...))))
 
 export NonparametricSamplingResults, ParametricSamplingResults, sample, aic
-export to_parametric, getsampled
+export to_parametric, getsampled, addresses, get_first_node
