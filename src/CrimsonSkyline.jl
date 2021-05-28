@@ -21,7 +21,6 @@ include("util.jl")
 include("trace.jl")
 
 include("results.jl")
-include("online.jl")
 
 include("effects.jl")
 
