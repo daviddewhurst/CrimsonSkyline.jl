@@ -36,7 +36,7 @@ function Base.getindex(r :: NonparametricSamplingResults{I}, k) where I <: Infer
             push!(results, t.trace[k].value)
         end
     end
-    convert(Vector{typeof(results[1])}, results)
+    convert(Vector{typeof(results[1])}, results)  # assuming address type stability
 end
 Base.getindex(r :: SamplingResults{I}) where I <: InferenceType = r.return_values
 Base.length(r :: SamplingResults{I}) where I <: InferenceType = length(r.log_weights)
@@ -160,30 +160,6 @@ end
 function sample(t :: Trace, a, d, i :: Empirical; pa = ())
     connect_pa_ch!(t, pa, a)
     t[a].value
-end
-
-@doc raw"""
-    function aic(r :: SamplingResults{I}) where I <: InferenceType
-
-Computes an empirical estimate of the Akaike Information Criterion from a `SamplingResults`.
-The formula is 
-    
-```math
-\text{AIC}(r)/2 = \min_{t \in \text{traces}(r)}|\text{params}(t)| - \hat\ell(t),
-```
-    
-where ``|\text{params}(t)|`` is the number of non-observed and non-deterministic sample nodes and
-``\hat\ell(t)`` is the empirical maximum likelihood.
-"""
-function aic(r :: SamplingResults{I}) where I <: InferenceType
-    min_aic = Inf
-    for t in r.traces
-        a = aic(t)
-        if a < min_aic
-            min_aic = a
-        end
-    end
-    min_aic
 end
 
 function parametric_posterior(address, dist, result :: SamplingResults)

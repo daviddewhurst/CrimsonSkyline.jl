@@ -200,6 +200,12 @@ Modules = [CrimsonSkyline]
 Pages = ["results.jl"]
 ```
 
+## statistics
+```@autodocs
+Modules = [CrimsonSkyline]
+Pages = ["statistics.jl"]
+```
+
 ## Index
 ```@index
 ```

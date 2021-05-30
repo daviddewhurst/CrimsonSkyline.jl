@@ -21,6 +21,7 @@ include("util.jl")
 include("trace.jl")
 
 include("results.jl")
+include("statistics.jl")
 
 include("effects.jl")
 

@@ -245,32 +245,6 @@ function loglikelihood(t :: Trace)
 end
 
 @doc raw"""
-    function aic(t :: Trace)
-
-Computes the Akaike Information Criterion for a *single trace* (thus replacing the definition) with 
-"maximum likelihood" by one with "likelihood". The formula is 
-
-```math
-\text{AIC}(t)/2 = |\text{params}(t)| - \ell(t),
-```
-
-where ``\text{params}(t)|`` is the number of non-observed and non-deterministic sample nodes.
-"""
-function aic(t :: Trace)
-    ll = 0.0
-    k = 0
-    for v in values(t)
-        if !(v.observed || v.interpretation == DETERMINISTIC)
-            k += 1
-        end
-        if v.observed 
-            ll += v.logprob_sum
-        end
-    end
-    2.0 * (k - ll)
-end
-
-@doc raw"""
     function pa_from_trace(t :: Trace, pa)
 
 Collects nodes in trace corresponding to an iterable of parent addresses `pa`.
@@ -699,7 +673,7 @@ end
 
 
 export Node, ParametricNode, SampleableNode, node
-export Trace, UntypedTrace, TypedTrace, trace, logprob, logprob!, sample, observe, input, loglikelihood, aic
+export Trace, UntypedTrace, TypedTrace, trace, logprob, logprob!, sample, observe, input, loglikelihood
 export node_info, graph, transform
 export Nonstandard, Standard, Replayed, Conditioned, Deterministic, Input, Empirical
 export NONSTANDARD, STANDARD, REPLAYED, CONDITIONED, DETERMINISTIC, INPUT, EMPIRICAL
