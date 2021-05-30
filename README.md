@@ -32,6 +32,7 @@ We might implement more inference algorithms sometime.
 
 See the `examples` directory:
 
++ `changepoint.jl`: changepoint detection in British coal mining disaster data
 + `clustering.jl`: open-universe clustering model where the number of clusters is *a priori* unbounded. Demonstrates a true open universe problem without the artifical upper bound introduced in e.g., a typical variational inference approach.
 + `coin_flip.jl`: classic "how biased is this coin" problem
 + `effects.jl`: usage of effect functionals that change program interpretation
