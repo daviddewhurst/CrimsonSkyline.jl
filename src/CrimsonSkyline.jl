@@ -15,6 +15,7 @@ using StatsBase
 using Logging
 using JuliaDB
 using JSON
+using Plots
 using PDMats
 
 include("util.jl")
@@ -32,5 +33,6 @@ include("metropolis.jl")
 include("nested.jl")
 
 include("io.jl")
+include("plot.jl")
 
 end # module

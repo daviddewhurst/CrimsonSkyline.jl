@@ -30,6 +30,7 @@ function main()
     true_posterior_mean = 0.6429
     @info "True posterior bias: $true_posterior_mean"
     @info "Mean posterior bias estimate: $(mean(inference_results, "bias"))"
+    plot_marginal(inference_results, "bias", "plots/coin_flip", "bias.png")
 end
 
 main()
