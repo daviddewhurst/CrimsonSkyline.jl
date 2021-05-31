@@ -185,7 +185,19 @@ parametric_posterior(address, dist::D, results::SamplingResults) where D <: Bino
 
 univariate_continuous_parametric_posterior(address, dist, result) = insupport(dist, -1.0) ? fit(Normal, result[address]) : fit(LogNormal, result[address])
 univariate_discrete_parametric_posterior(address, dist, result) = insupport(dist, -1) ? fit(DiscreteUniform, result[address]) : fit(Poisson, result[address])
-multivariate_continuous_parametric_posterior(address, dist, result) = insupport(dist, -1.0 .* ones(size(dist))) ? fit(MvNormal, hcat(result[address]...)) : MvLogNormal(fit(MvNormal, log.(hcat(result[address]...))))
+function multivariate_continuous_parametric_posterior(address, dist, result)
+    if insupport(dist, -1.0 .* ones(size(dist)))
+        mat = hcat(result[address]...)
+        m = vec(mean(mat, dims=2))
+        s = vec(std(mat, dims=2))
+        MvNormal(m, s)
+    else 
+        mat = log.(hcat(result[address]...))
+        m = vec(mean(mat, dims=2))
+        s = vec(std(mat, dims=2))
+        MvLogNormal(MvNormal(m, s))
+    end
+end
 
 export NonparametricSamplingResults, ParametricSamplingResults, sample, aic
 export to_parametric, getsampled, addresses, get_first_node
