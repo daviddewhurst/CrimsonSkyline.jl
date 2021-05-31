@@ -183,9 +183,9 @@ parametric_posterior(address, dist::D, results::SamplingResults) where D <: Beta
 parametric_posterior(address, dist::D, results::SamplingResults) where D <: Dirichlet = fit_mle(Dirichlet, results[address])
 parametric_posterior(address, dist::D, results::SamplingResults) where D <: Binomial = fit_mle(Binomial, dist.n, results[address])
 
-univariate_continuous_parametric_posterior(address, dist, result) = insupport(dist, -1.0) ? fit_mle(Normal, result[address]) : fit_mle(LogNormal, result[address])
-univariate_discrete_parametric_posterior(address, dist, result) = insupport(dist, -1) ? fit_mle(DiscreteUniform, result[address]) : fit_mle(Poisson, result[address])
-multivariate_continuous_parametric_posterior(address, dist, result) = insupport(dist, -1.0 .* ones(size(dist))) ? fit_mle(MvNormal, hcat(result[address]...)') : MvLogNormal(fit_mle(MvNormal, log.(hcat(result[address]...)')))
+univariate_continuous_parametric_posterior(address, dist, result) = insupport(dist, -1.0) ? fit(Normal, result[address]) : fit(LogNormal, result[address])
+univariate_discrete_parametric_posterior(address, dist, result) = insupport(dist, -1) ? fit(DiscreteUniform, result[address]) : fit(Poisson, result[address])
+multivariate_continuous_parametric_posterior(address, dist, result) = insupport(dist, -1.0 .* ones(size(dist))) ? fit(MvNormal, hcat(result[address]...)) : MvLogNormal(fit(MvNormal, log.(hcat(result[address]...))))
 
 export NonparametricSamplingResults, ParametricSamplingResults, sample, aic
 export to_parametric, getsampled, addresses, get_first_node
