@@ -180,7 +180,7 @@ end
 
 parametric_posterior(address, dist::D, result::SamplingResults) where D <: Categorical = fit_mle(Categorical, length(dist.p), results[address])
 parametric_posterior(address, dist::D, results::SamplingResults) where D <: Beta = fit_mle(Beta, results[address])
-parametric_posterior(address, dist::D, results::SamplingResults) where D <: Dirichlet = fit_mle(Dirichlet, hcat(result[address]...))
+parametric_posterior(address, dist::D, results::SamplingResults) where D <: Dirichlet = fit_mle(Dirichlet, hcat(results[address]...))
 parametric_posterior(address, dist::D, results::SamplingResults) where D <: Binomial = fit_mle(Binomial, dist.n, results[address])
 
 univariate_continuous_parametric_posterior(address, dist, result) = insupport(dist, -1.0) ? fit(Normal, result[address]) : fit(LogNormal, result[address])
