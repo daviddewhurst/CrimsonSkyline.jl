@@ -121,3 +121,24 @@ end
     g()
     @info "Replayed trace after function exec: $new_t"
 end
+
+function expanded_plate_model(t, data)
+    hl = sample(t, "hl", Normal())
+    locs = plate(t, sample, "locs", Normal(hl, 1.0), length(data))
+    plate(t, observe, "data", Normal, data, (locs, ones(length(data))))
+end
+
+@testset "expanded obs plate 1" begin
+    t = trace()
+    data = randn(3)
+    expanded_plate_model(t, data)
+    @info t
+end
+
+locs_proposal(t0, t1, params...) = propose(t1, "locs", MvNormal(t0["locs"].value, 1.0))
+hl_proposal(t0, t1, params...) = propose(t1, "hl", Normal(t0["hl"].value, 1.0))
+
+@testset "expanded obs plate 2" begin
+    data = randn(10)
+    results = mh(expanded_plate_model, [locs_proposal, hl_proposal]; params = (data,))
+end

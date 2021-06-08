@@ -498,6 +498,20 @@ function plate(t::Trace, op::F, a, d, v::Vector{T}; pa = ()) where {T, F<:Functi
     v
 end
 
+function plate(t::Trace, op::F, a, d, v::Vector{T}, params; pa = ()) where {T, F<:Function}
+    # accumulate logprob from values with same distribution
+    lp = 0.0
+    for (datapoint, param_group) in zip(v, zip(params...))
+        lp += logpdf(d(param_group...), datapoint)
+    end
+    n = node(typeof(v), a, d, true, STANDARD)
+    setlp!(n, lp)
+    n.value = v
+    t[a] = n
+    connect_pa_ch!(t, pa, a)
+    v
+end
+
 @doc raw"""
     function sample(t :: Trace, a, d, i :: Union{Standard,Conditioned}; pa = ())   
 
