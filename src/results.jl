@@ -1,5 +1,12 @@
 abstract type InferenceType end 
-abstract type SamplingResults{I<:InferenceType} end
+abstract type Results{I<:InferenceType} end
+abstract type SamplingResults{I} <: Results{I} end
+
+struct BareResults{I} <: Results{I}
+    interpretation :: I
+    values :: DefaultDict{Any, Vector{Any}}
+end
+export BareResults
 
 ### base types ###
 @doc raw"""

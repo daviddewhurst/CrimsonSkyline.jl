@@ -498,6 +498,32 @@ function plate(t::Trace, op::F, a, d, v::Vector{T}; pa = ()) where {T, F<:Functi
     v
 end
 
+@doc raw"""
+    function plate(t::Trace, op::F, a, d, v::Vector{T}, params; pa = ()) where {T, F<:Function}
+
+Plate over observed variables with different values but identical distribution, i.e.,
+``p(x|z) = \prod_n p(x_n | z_n)``.
+This is as opposed to `plate(t::Trace, op::F, a, d, v::Vector{T}; pa = ())`, which is equivalent to
+``p(x|z) = \prod_n p(x_n | z)``.
+
+`params` must have the same length as `v`. Each element of `params` corresponds to a vector of that 
+particular component of the `params`, i.e., ``z = (z_1, ..., z_D)`` where each ``z_d`` has length ``N``,
+the number of observed datapoints, and ``D`` is the cardinality of the parameterization of the 
+distribution.
+
+E.g., replace 
+```
+locs = sample(t, "locs", MvNormal(D, 1.0))
+for (i, (loc, d)) in enumerate(zip(locs, data))
+    observe(t, "data $i", Normal(loc, 1.0), d)
+end
+```
+with 
+```
+locs = sample(t, "locs", MvNormal(D, 1.0))
+plate(t, observe, "data", Normal, data, (locs, ones(D)))
+```
+"""
 function plate(t::Trace, op::F, a, d, v::Vector{T}, params; pa = ()) where {T, F<:Function}
     # accumulate logprob from values with same distribution
     lp = 0.0

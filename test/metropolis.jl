@@ -43,7 +43,6 @@ end
 loc_proposal(old_t :: Trace, new_t :: Trace, data) = propose(new_t, :loc, Normal(old_t[:loc].value, 0.25))
 scale_proposal(old_t :: Trace, new_t :: Trace, data) = propose(new_t, :scale, truncated(Normal(old_t[:scale].value, 0.25), 0.0, Inf))
 
-
 @testset "general metropolis proposal 1" begin
     data = randn(100) .+ 4.0
     t = trace()
@@ -64,6 +63,14 @@ scale_proposal(old_t :: Trace, new_t :: Trace, data) = propose(new_t, :scale, tr
     @info "inferred E[loc] = $(mean(locs[1000:end]))"
     @info "inferred E[scale] = $(mean(scales[1000:end]))"
     @info "approximate p(x) = sum_z p(x|z) = $(mean(lls[1000:end]))"
+end
+
+@testset "generic metropolis proposal 2" begin
+    data = randn(100) .+ 4.0
+    @info "Using full results struct"
+    results = mh(wider_normal_model, [loc_proposal, scale_proposal]; params = (data,), inverse_verbosity = Inf)
+    @info "Using bare results struct"
+    results = mh(wider_normal_model, [loc_proposal, scale_proposal], (:loc,); params = (data,), inverse_verbosity = Inf)
 end
 
 function random_sum_model(t :: Trace, data)
@@ -93,7 +100,7 @@ function gen_loc_proposal(old_trace, new_trace, ix, params...)
     propose(new_trace, (:loc, ix), Normal(old_trace[(:loc, ix)].value, 0.25))
 end
 
-@testset "generic metropolis proposal 2" begin
+@testset "generic metropolis proposal 3" begin
     t = trace()
     data = random_sum_model(t, fill(nothing, 25))
     @info "True :n = $(t[:n].value)"
@@ -146,7 +153,7 @@ end
 beta_proposal(old_t :: Trace, new_t :: Trace, _, _, _) = propose(new_t, :β, MvNormal(old_t[:β].value, 0.5 .* eye(length(old_t[:β].value))))
 scale_proposal(old_t :: Trace, new_t :: Trace, _, _, _) = propose(new_t, :scale, truncated(Normal(old_t[:scale].value, 0.25), 0.0, Inf))
 
-@testset "generic metropolis proposal 2" begin
+@testset "generic metropolis proposal 4" begin
     D = 10
     N = 200
     X = randn(D, N)

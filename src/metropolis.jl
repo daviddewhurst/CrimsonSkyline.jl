@@ -11,6 +11,7 @@ const ASYMMETRIC = Asymmetric()
 struct Metropolis <: InferenceType end
 const METROPOLIS = Metropolis()
 
+bare_metropolis_results() = BareResults{Metropolis}(METROPOLIS, DefaultDict{Any, Vector{Any}}([]))
 metropolis_results() = NonparametricSamplingResults{Metropolis}(METROPOLIS, Array{Float64, 1}(), Array{Any, 1}(), Array{Trace, 1}())
 metropolis_results(A::DataType, D::DataType) = NonparametricSamplingResults{Metropolis}(METROPOLIS, Array{Float64, 1}(), Array{Any, 1}(), Array{TypedTrace{A, D}, 1}())
 symmetric(f :: F) where F <: Function = false
@@ -317,6 +318,48 @@ function mh(f, qs :: A; params = (), burn = 100, thin = 10, num_iterations = 100
             push!(results.return_values, r)
             push!(results.traces, t)
             push!(results.log_weights, logprob(t))
+        end
+        if n % inverse_verbosity == 0
+            @info "On iteration $n of $num_iterations"
+        end
+    end
+    results
+end
+
+@doc raw"""
+    function mh(f, qs :: A, addresses; params = (), burn = 100, thin = 10, num_iterations = 10000, inverse_verbosity = 100) where A <: AbstractArray
+
+Generic Metropolis algorithm using user-defined proposal kernels, returning only a requested subset of 
+addresses. 
+
+Args:
+
++ `f`: stochastic function. Must have call signature `f(t :: Trace, params...)`
++ `qs`: array-like of proposal kernels. Proposal kernels are applied sequentially in the order that they appear in this array.
+    Proposal kernels must have the signature `q(old_t :: Trace, new_t :: Trace, params...)` where it must take in at least the same number of arguments
+    in `params` as `f`.
++ `addresses`: *only* values sampled at these addresses will be saved in the `values` field of the
+    `BareResults` struct returned.
++ `params`: addditional arguments to pass to `f` and each of the proposal kernels.
++ `burn`: number of samples to discard at beginning of markov chain
++ `thin`: keep only every `thin`-th draw. E.g., if `thin = 100`, only every 100-th trace will be kept.
++ `num_iterations`: total number of steps to take in the markov chain
++ `inverse_verbosity`: every `inverse_verbosity` iterations, a stattus report will be logged.
+"""
+function mh(f, qs :: A, addresses; params = (), burn = 100, thin = 10, num_iterations = 10000, inverse_verbosity = 100) where A <: AbstractArray
+    results = bare_metropolis_results()
+    t = trace()
+    f(t, params...)
+    local r
+    for n in 1:num_iterations
+        for q in qs
+            (r, t) = mh_step(t, f, q; params = params, return_val = true)
+        end
+        if (n > burn) && (n % thin == 0)
+            for a in addresses
+                v = a in keys(t) ? t[a].value : nothing
+                push!(results.values[a], v)
+            end
         end
         if n % inverse_verbosity == 0
             @info "On iteration $n of $num_iterations"
