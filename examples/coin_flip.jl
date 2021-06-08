@@ -20,6 +20,10 @@ end
 function main()
     @warn "~~~Coin flip problem~~~"
     data = [true, true, false, false, true, true, true, true]
+    @info "Demonstrating trace structure"
+    t = trace()
+    coin_model(t, data[1:2])
+    @info "Trace with data subset: $t"
     @info "Running default mh inference (no user tuning required)"
     @time inference_results = mh(coin_model; params = (data,))
     # posterior parameters:
