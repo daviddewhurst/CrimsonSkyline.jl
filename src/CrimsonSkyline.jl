@@ -19,6 +19,9 @@ using Plots
 using PDMats
 
 include("util.jl")
+
+include("field.jl")
+
 include("trace.jl")
 
 include("results.jl")

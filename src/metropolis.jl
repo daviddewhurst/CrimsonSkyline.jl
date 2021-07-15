@@ -54,13 +54,7 @@ end
 
 Stochastic function that either returns `new_t` if accepted or returns `t` if not accepted.
 """
-function accept(t :: Trace, new_t :: Trace, log_a :: Float64)
-    if log(rand()) < log_a
-        new_t
-    else
-        t
-    end
-end
+accept(t :: Trace, new_t :: Trace, log_a :: Float64) = log(rand()) < log_a ? new_t : t
 
 @doc raw"""
     function mh_step(t :: Trace, f; params = (), return_val :: Bool = false)
