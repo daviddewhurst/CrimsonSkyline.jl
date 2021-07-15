@@ -104,6 +104,9 @@ function setlp!(n::Node, lp)
     n.logprob_sum = lp
 end
 
+# default fallback to distributions method
+logprob(d, v) = Distributions.logpdf(d, v)
+
 @doc raw"""
     function node(value, address :: A, dist :: D, is_obs :: Bool, i :: Interpretation) where {A, D}
 
@@ -111,7 +114,7 @@ Outer constructor for `Node` where data is passed during construction. Data type
 """
 function node(value, address :: A, dist :: D, is_obs :: Bool, i :: Interpretation) where {A, D}
     T = typeof(value)
-    lp = logpdf(dist, value)
+    lp = logprob(dist, value)
     ParametricNode{A, D, T}(address, dist, value, lp, lp, is_obs, Array{Node, 1}(), Array{Node, 1}(), i, i)
 end
 
@@ -122,11 +125,12 @@ Outer constructor for `Node` where data is passed during construction. Data type
 """
 function node(value, address :: A, dist :: D, is_obs :: Bool, i :: Interpretation) where {A, D <: Sampleable}
     T = typeof(value)
-    lp = logpdf(dist, value)
+    lp = logprob(dist, value)
     SampleableNode{A, T}(address, dist, value, lp, lp, is_obs, Array{Node, 1}(), Array{Node, 1}(), i, i)
 end
 
-Distributions.logpdf(::Input, value) = 0.0
+# pass through input into program without scoring it
+logprob(::Input, value) = 0.0
 
 @doc raw"""
     abstract type Trace end
