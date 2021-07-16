@@ -403,6 +403,25 @@ end
 
 ### q is a proposal kernel
 
+@doc raw"""
+    function mh_step(rf::RandomField, q, x, log_prob_rf_x)
+
+A Metropolis step to sample from a random field using an arbitrary proposal kernel.
+
+Args:
+
++ `rf`: a `RandomField` from which to sample
++ `q`: a proposal kernel. This must be a callable that satisfies the following
+    requirements:
+
+    + `q(x)` returns a new value `x_prime` that is generated using the input parameters
+        `x`, i.e., ``x' \sim q(x'|x)``. For example, `q(x) = rand(Normal(x, 0.25))`
+    + `q(x_prime, x)` scores (computes the log probability of) `x_prime` against `x`, i.e.,
+        computes ``\log q(x' | x)``
+
++ `x`: a dict with format `address => value`, the current sampled value.
++ `log_prob_rf_x`: the log probability of `x` under the random field.
+"""
 function mh_step(rf::RandomField, q, x, log_prob_rf_x)
     x_prime_given_x = q(x)
     log_prob_x_prime_given_x = q(x_prime_given_x, x)
@@ -412,6 +431,20 @@ function mh_step(rf::RandomField, q, x, log_prob_rf_x)
     accept(x, log_prob_rf_x, x_prime_given_x, log_prob_rf_x_prime, log_a)
 end
 
+@doc raw"""
+    function mh(rf::RandomField, qs::Vector{T}, val; burn=1000, thin=100, num_iterations=11000) where T
+
+Metropolis Hastings algorithm for sampling from a random field using arbitrary proposal kernels.
+
+Args: 
+
++ `rf`: the random field from which to sample
++ `qs`: vector of proposal kernel callables; see documentation of `mh_step` for specification of proposal kernels
++ `val`: initial guess with which to initialize MH, must be a dict with format `address => value`.
++ `burn`: number of samples to discard at beginning of markov chain
++ `thin`: keep only every `thin`-th draw. E.g., if `thin = 100`, only every 100-th trace will be kept.
++ `num_iterations`: total number of steps to take in the markov chain
+"""
 function mh(rf::RandomField, qs::Vector{T}, val; burn=1000, thin=100, num_iterations=11000) where T
     log_prob = rf(val)
     results = structured_metropolis_results()

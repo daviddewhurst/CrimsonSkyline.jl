@@ -18,6 +18,67 @@ Modules = [CrimsonSkyline]
 Pages = ["trace.jl"]
 ```
 
+## field
+`CrimsonSkyline` also includes methods for sampling from undirected models.
+
+Here is an example (taken directly from the tests!).
+Suppose we have three variables ``a``, ``b``, and ``c``, 
+with field structure `a - b - c` 
+and continuous factors 
+``\psi_{a,b}(a, b) = \mathrm{MvNormal}(0, \Sigma_{a,b})`` with
+``\Sigma_{a,b} = \begin{pmatrix} 1.0 & 0.5 \\ 0.5 & 1.0 \end{pmatrix}``
+and ``\psi_{b,c}(b, c) = \mathrm{MvNormal}(\begin{pmatrix} 2.0 & 2.0 \end{pmatrix}, \Sigma_{b,c})`` with 
+``\Sigma_{b,c} = \begin{pmatrix} 2.0 & -1.0 \\ -1.0 & 2.0 \end{pmatrix}``.
+We can construct the factors using two ordinary functions:
+```
+factor_ab(x) = logpdf(MvNormal(PDMat([1.0 0.5; 0.5 1.0])), x)
+factor_bc(x) = logpdf(MvNormal([2.0, 2.0], PDMat([2.0 -1.0; -1.0 2.0])), x)
+```
+Suppose that we observe the data `b = 3.0`. 
+We can instantiate the `RandomField` object with the factors and this evidence as
+follows:
+```
+factors = Dict(["a", "b"] => factor_ab, ["b", "c"] => factor_bc)
+evidence = Dict("b" => 3.0)
+field = RandomField(factors, evidence)
+```
+In general one cannot sample from random fields directly and instead must use a method 
+such as belief propagation or approximate inference methods. 
+Here we use Metropolis Hastings.
+We define a proposal kernel that can (a) propose new values and (b) score those values
+in comparison with old sampled values. 
+This functionality can be implemented as a function, but we will implement a struct
+to capture some proposal kernel state (namely, the standard deviation of a 
+proposal distribution). 
+We define the proposal kernel as follows:
+```
+struct FactorProposal
+    addresses :: Vector{String}
+    last :: Vector{String}
+    std :: Float64
+end
+FactorProposal(addresses) = FactorProposal(addresses, [addresses[1]], 0.5)
+function (fp::FactorProposal)(x::Dict)
+    new = deepcopy(x)
+    address = rand(fp.addresses)
+    new[address] = randn() * fp.std + new[address]
+    fp.last[1] = address
+    new
+end
+function (fp::FactorProposal)(x_prime::Dict, x::Dict)
+    address = fp.last[1]
+    logpdf(Normal(x[address], fp.std), x_prime[address]) - log(length(fp.addresses))
+end
+```
+
+![marginal factor a](../../test/out/factor-marginal-a.png)
+![marginal factor c](../../test/out/factor-marginal-c.png)
+
+```@autodocs
+Modules = [CrimsonSkyline]
+Pages = ["field.jl"]
+```
+
 ## io
 
 Saving and loading traces and `SamplingResults` is possible using the `save` and `load` functions. This functionality depends on `JuliaDB`. 
