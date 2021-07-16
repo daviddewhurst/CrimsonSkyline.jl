@@ -8,6 +8,15 @@ struct BareResults{I} <: Results{I}
 end
 export BareResults
 
+struct StructuredResults{I} <: SamplingResults{I}
+    interpretation :: I
+    values :: Dict{String, Vector{Any}}
+    log_weights :: Vector{Float64}
+end
+Base.keys(sr::StructuredResults) = keys(sr.values)
+Base.getindex(sr::StructuredResults, k) = Base.getindex(sr.values, k)
+export StructuredResults
+
 ### base types ###
 @doc raw"""
     struct NonparametricSamplingResults{I} <: SamplingResults{I}

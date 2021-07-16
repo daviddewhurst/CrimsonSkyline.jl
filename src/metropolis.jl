@@ -12,6 +12,7 @@ struct Metropolis <: InferenceType end
 const METROPOLIS = Metropolis()
 
 bare_metropolis_results() = BareResults{Metropolis}(METROPOLIS, DefaultDict{Any, Vector{Any}}([]))
+structured_metropolis_results() = StructuredResults{Metropolis}(METROPOLIS, Dict{String, Vector{Any}}(), Float64[])
 metropolis_results() = NonparametricSamplingResults{Metropolis}(METROPOLIS, Array{Float64, 1}(), Array{Any, 1}(), Array{Trace, 1}())
 metropolis_results(A::DataType, D::DataType) = NonparametricSamplingResults{Metropolis}(METROPOLIS, Array{Float64, 1}(), Array{Any, 1}(), Array{TypedTrace{A, D}, 1}())
 symmetric(f :: F) where F <: Function = false
@@ -395,6 +396,37 @@ function mh(f, qs :: A, types::Tuple{DataType,DataType}; params = (), burn = 100
         end
         if n % inverse_verbosity == 0
             @info "On iteration $n of $num_iterations"
+        end
+    end
+    results
+end
+
+### q is a proposal kernel
+
+function mh_step(rf::RandomField, q, x, log_prob_rf_x)
+    x_prime_given_x = q(x)
+    log_prob_x_prime_given_x = q(x_prime_given_x, x)
+    log_prob_rf_x_prime = rf(x_prime_given_x)
+    log_prob_x_given_x_prime = q(x, x_prime_given_x)
+    log_a = log_prob_rf_x_prime + log_prob_x_given_x_prime - log_prob_rf_x - log_prob_x_prime_given_x
+    accept(x, log_prob_rf_x, x_prime_given_x, log_prob_rf_x_prime, log_a)
+end
+
+function mh(rf::RandomField, qs::Vector{T}, val; burn=1000, thin=100, num_iterations=11000) where T
+    log_prob = rf(val)
+    results = structured_metropolis_results()
+    for name in rf.names
+        results.values[name] = []
+    end
+    for n in 1:num_iterations
+        for q in qs
+            (val, log_prob) = mh_step(rf, q, val, log_prob)
+        end
+        (n > burn) && (n % thin == 0) && begin
+            for (k, v) in val
+                push!(results.values[k], v)
+            end
+            push!(results.log_weights, log_prob)
         end
     end
     results

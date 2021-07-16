@@ -20,11 +20,12 @@ using PDMats
 
 include("util.jl")
 
-include("field.jl")
-
 include("trace.jl")
 
 include("results.jl")
+
+include("field.jl")
+
 include("statistics.jl")
 
 include("effects.jl")

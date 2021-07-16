@@ -1,4 +1,4 @@
-function plot_marginal(r::NonparametricSamplingResults{I}, a) where I<:InferenceType
+function plot_marginal(r::SamplingResults{I}, a) where I<:InferenceType
     l = @layout([a{0.01h}; [b c]])
     title = plot(
         title = "Marginal $a posterior, computed using $(string(typeof(r.interpretation)))", 
