@@ -21,6 +21,7 @@ Pages = ["trace.jl"]
 ## field
 `CrimsonSkyline` also includes methods for sampling from undirected models.
 
+### Using Metropolis-Hastings
 Here is an example (taken directly from the tests!).
 Suppose we have three variables ``a``, ``b``, and ``c``, 
 with field structure `a - b - c` 
@@ -70,7 +71,24 @@ function (fp::FactorProposal)(x_prime::Dict, x::Dict)
     logpdf(Normal(x[address], fp.std), x_prime[address]) - log(length(fp.addresses))
 end
 ```
-
+This is pretty straighforward: calling `fp(x)` generates a proposal `x_prime` i.e., ``x' \sim q(x)``
+(which in this case is just a random walk step away from the 
+current point) and calling `fp(x_prime, x)` computes the transition 
+probability ``q(x' | x)``. 
+Once we have the proposal in hand, we can sample from the posterior 
+``p(a, c | b = 3.0)`` by calling `mh(...)` just as in the case of trace-based models:
+```
+addresses = ["a", "c"]
+proposal = FactorProposal(addresses)
+initial_values = Dict("a" => 0.0, "b" => 3.0, "c" => 0.0)
+samples = mh(field, [proposal], initial_values; burn=1000, thin=100, num_iterations=11000)
+```
+Because `RandomField`s aren't generative models, we have to seed the MH algorithm with an 
+initial value for each address. (In this case, the value used to seed `"b"` isn't used 
+by `mh` because we've posted evidence to that address; if we just wanted to sample from 
+``p(a, b, c)`` without posting evidence, the initiaizer `"b" => 3.0` would be used.)
+We can visualize the marginal posteriors ``p(a|b=3.0)`` and ``p(c | b = 3.0)`` below (using
+the built-in `plot_marginal`):
 ![marginal factor a](../../test/out/factor-marginal-a.png)
 ![marginal factor c](../../test/out/factor-marginal-c.png)
 

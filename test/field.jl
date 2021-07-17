@@ -27,7 +27,7 @@ end
     addresses = ["a", "c"]
     proposal = FactorProposal(addresses)
     initial_values = Dict("a" => 0.0, "b" => 3.0, "c" => 0.0)
-    samples = mh(field, [proposal], initial_values; burn=2500, thin=500, num_iterations=52500)
+    samples = mh(field, [proposal], initial_values; burn=1000, thin=100, num_iterations=11000)
     for address in ["a", "b", "c"]
         plot_marginal(samples, address, "out", "factor-marginal-$address.png")
     end
