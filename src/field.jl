@@ -37,6 +37,32 @@ struct RandomField
     evidence::Dict{String,Any}
 end
 
+struct GenerativeField{T}
+    field::RandomField
+    proposal::T
+    val::Dict
+    function GenerativeField{T}(field::RandomField, proposal::T, val::Dict) where T
+        for (k,v) in field.evidence
+            val[k] = v
+        end
+        new(field, proposal, val)
+    end
+end
+GenerativeField(field::RandomField, proposal::T, val::Dict) where T = GenerativeField{T}(field::RandomField, proposal::T, val::Dict)
+export GenerativeField
+
+function Distributions.rand(gf::GenerativeField; num_iterations=2500)
+    results = mh(
+        gf.field, [gf.proposal], gf.val;
+        burn = num_iterations, thin = 1, num_iterations = num_iterations + 1
+    )
+    sample = Dict(k => v[1] for (k,v) in results.values)
+    for (k, v) in sample
+        gf.val[k] = v
+    end
+    sample
+end
+
 @doc raw"""
     function logprob(rf::RandomField, x::Dict)
 
@@ -61,6 +87,7 @@ function logprob(rf::RandomField, x::Dict)
     lp
 end
 (rf::RandomField)(x::Dict) = logprob(rf, x)
+logprob(gf::GenerativeField, x::Dict) = logprob(gf.field, x)
 
 @doc raw"""
     function RandomField(factors::Dict{Vector{String},Function})

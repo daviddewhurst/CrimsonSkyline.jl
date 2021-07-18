@@ -19,6 +19,7 @@ function (fp::FactorProposal)(x_prime::Dict, x::Dict)
     logpdf(Normal(x[address], fp.std), x_prime[address]) - log(length(fp.addresses))
 end
 
+#=
 @testset "make field and sample" begin
     factors = Dict(["a", "b"] => factor_ab, ["b", "c"] => factor_bc)
     evidence = Dict("b" => 3.0)
@@ -32,3 +33,29 @@ end
         plot_marginal(samples, address, "out", "factor-marginal-$address.png")
     end
 end
+=#
+
+@testset "using generative field" begin
+    factors = Dict(["a", "b"] => factor_ab, ["b", "c"] => factor_bc)
+    field = RandomField(factors)
+    addresses = ["a", "b", "c"]
+    proposal = FactorProposal(addresses)
+    init = Dict("a" => 0.0, "b" => 0.0, "c" => 0.0)
+    gf = GenerativeField(field, proposal, init)
+
+    # generative fields can be used in generic stochastic functions
+    t = trace()
+    sample(t, "field", gf)
+    @info t
+
+    # note that we can pass upstream samped values as evidence
+    t = trace()
+    upstream_value = sample(t, "a", Normal())
+    field = RandomField(factors, Dict("a" => upstream_value))
+    proposal = FactorProposal(["b", "c"])
+    init = Dict("a" => 0.0, "b" => 0.0, "c" => 0.0)
+    gf = GenerativeField(field, proposal, init)
+    sample(t, "field", gf)
+    @info t
+end
+
