@@ -92,6 +92,22 @@ the built-in `plot_marginal`):
 ![marginal factor a](../../test/out/factor-marginal-a.png)
 ![marginal factor c](../../test/out/factor-marginal-c.png)
 
+In combination with a proposal kernel and MH initialization point, random fields
+can be used in `CrimsonSkyline`'s trace-based PPL. There is convenience wrapper 
+to bundle these components together called `GenerativeField`. Here is an example
+of using it in the trace-based PPL:
+```
+t = trace()
+upstream_value = sample(t, "a", Normal())
+# to pass upstream values as parameters to the random field
+# just post them as evidence
+field = RandomField(factors, Dict("a" => upstream_value))
+proposal = FactorProposal(["b", "c"])
+init = Dict("a" => 0.0, "b" => 0.0, "c" => 0.0)
+gf = GenerativeField(field, proposal, init)
+sample(t, "field", gf)
+```
+
 ```@autodocs
 Modules = [CrimsonSkyline]
 Pages = ["field.jl"]
