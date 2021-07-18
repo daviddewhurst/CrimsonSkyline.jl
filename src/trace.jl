@@ -733,5 +733,6 @@ end
 export Node, ParametricNode, SampleableNode, node
 export Trace, UntypedTrace, TypedTrace, trace, logprob, logprob!, sample, observe, input, loglikelihood
 export node_info, graph, transform
+export Interpretation
 export Nonstandard, Standard, Replayed, Conditioned, Deterministic, Input, Empirical
 export NONSTANDARD, STANDARD, REPLAYED, CONDITIONED, DETERMINISTIC, INPUT, EMPIRICAL
