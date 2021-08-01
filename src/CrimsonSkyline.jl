@@ -21,6 +21,7 @@ using PDMats
 include("util.jl")
 
 include("trace.jl")
+include("distributions.jl")
 
 include("results.jl")
 
