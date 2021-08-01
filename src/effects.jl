@@ -144,13 +144,13 @@ evidence associated with that address. Returns a function with call signature
 identical to that of `f` and return signature `(t :: Trace, rtype)` where `rtype`
 is the return type of `f`.
 """
-function condition(f, evidence :: Dict)
+function condition(f, evidence :: Dict; bare=false)
     function g(t :: Trace, params...)
         for (a, e) in evidence
             t[a] = node(e, a, [CONDITIONED], true, CONDITIONED)
         end
         r = f(t, params...)
-        (t, r)
+        !bare ? (t, r) : r
     end
     g
 end
