@@ -58,12 +58,12 @@ Base.getindex(r :: SamplingResults{I}) where I <: InferenceType = r.return_value
 Base.length(r :: SamplingResults{I}) where I <: InferenceType = length(r.log_weights)
 
 @doc raw"""
-    function addresses(r::SamplingResults{I}) where I <: InferenceType
+    function addresses(r::NonparametricSamplingResults{I}) where I <: InferenceType
 
 Get all addresses associated with the `SamplingResults` object,
 ``A = \bigcup_{t\in \text{traces}}\mathcal A_t``
 """
-function addresses(r::SamplingResults{I}) where I <: InferenceType
+function addresses(r::NonparametricSamplingResults{I}) where I <: InferenceType
     a = Set()
     for t in r.traces
         union!(a, collect(keys(t)))
@@ -134,6 +134,15 @@ function to_parametric(r::NonparametricSamplingResults{I}) where I<:InferenceTyp
 end
 Base.getindex(r :: ParametricSamplingResults{I}, k) where I <: InferenceType = r.distributions[k]
 getsampled(r :: ParametricSamplingResults{I}, k) where I <: InferenceType = [t.trace[k].value for t in r.traces]
+
+@doc raw"""
+    function addresses(r::ParametricSamplingResults{I}) where I <: InferenceType
+
+Get all addresses associated with the `SamplingResults` object,
+``A = \bigcup_{t\in \text{traces}}\mathcal A_t``
+"""
+addresses(r::ParametricSamplingResults{I}) where I <: InferenceType = Set(collect(keys(r.distributions)))
+
 
 @doc raw"""
     function Distributions.logpdf(r :: A, v) where A <: AbstractArray
