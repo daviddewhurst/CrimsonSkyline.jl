@@ -1,8 +1,4 @@
-signatures(f) = map(m -> m.sig, methods(f).ms)
-is_sf(f) = any(map(m -> Trace in m.parameters, signatures(f)))
-export is_sf
-
-function is_at_most_option_type(x)
+function is_at_widest_option_type(x)
     types = Set()
     for v in x
         union!(types, Set((typeof(v),)))
@@ -14,7 +10,7 @@ function is_at_most_option_type(x)
 end
 export is_at_most_option_type
 
-function get_types_from_any(x)
+function get_types_from_iterable(x)
     types = Set()
     for v in x
         union!(types, Set((typeof(v),)))
@@ -24,7 +20,7 @@ end
 
 function narrow_column_types!(data)
     for k in keys(data)
-        types = get_types_from_any(data[k])
+        types = get_types_from_iterable(data[k])
         TYPE = length(types) > 1 ? Union{types...} : types[1]
         data[k] = convert(Vector{TYPE}, data[k])
     end
@@ -44,24 +40,53 @@ function get_data(results, column_names)
                 push!(data[column_name], trace[column_name].value)
                 push!(data[cnlp], trace[column_name].logprob_sum)
             else
-                push!(data[column_name], nothing)
-                push!(data[cnlp], nothing)
+                push!(data[column_name], missing)
+                push!(data[cnlp], missing)
             end
         end
     end
     data
 end
 
-function table(f; params = (), num_iterations = 100)
-    !is_sf(f) && error("$f does not appear to be a stochastic function.")
-    results = forward_sampling(f; params = params, num_iterations = num_iterations)
+function table(f; params = (), num_iterations = 100, method::InferenceType = FORWARD, inference_params = Dict())
+    check_sf(f)
+    inference_params["num_iterations"] = num_iterations
+    results = inference(f, method; params = params, inference_params = inference_params)
     column_names = addresses(results)
-    types_cnames = get_types_from_any(column_names)
+    types_cnames = get_types_from_iterable(column_names)
     !((length(types_cnames) == 1) && (types_cnames[1] == String)) && error("$f does not have all string addresses")
     data = get_data(results, column_names)
-    !all(map(v -> is_at_most_option_type(v), values(data))) && error("Each column type is not typed at widest Option[T]")
+    !all(map(v -> is_at_widest_option_type(v), values(data))) && error("Each column type is not typed at widest Option[T]")
     narrow_column_types!(data)
-    df = to_df(data)
-    df
+    to_df(data)
 end
 export table
+
+abstract type TabularModel{F} end
+
+struct DataFrameModel{F} <: TabularModel{F}
+    f::F
+    table::DataFrame
+end
+function DataFrameModel(f::F; params = (), num_iterations = 100, method::InferenceType = FORWARD, inference_params = Dict()) where F
+    df = table(f; params = params, num_iterations = num_iterations, method = method, inference_params = inference_params)
+    DataFrameModel(f, df)
+end
+
+struct SQLiteModel{F} <: TabularModel{F}
+    f::F
+    db::SQLite.DB
+end
+function SQLiteModel(f::F; params = (), num_iterations = 100, method::InferenceType = FORWARD, inference_params = Dict()) where F
+    df = table(f; params = params, num_iterations = num_iterations, method = method, inference_params = inference_params)
+    db = SQLite.DB()
+    tablename = df |> SQLite.load!(db, "$(f)_results")
+    @info "Created table $tablename"
+    SQLiteModel(f, db)
+end
+export DataFrameModel, SQLiteModel
+
+function query(sqm::SQLiteModel, q::String)
+    DBInterface.execute(sqm.db, q) |> DataFrame
+end
+export query

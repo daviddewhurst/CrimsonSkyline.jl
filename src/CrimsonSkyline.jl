@@ -42,6 +42,7 @@ include("nested.jl")
 include("io.jl")
 include("plot.jl")
 
+include("inference.jl")
 include("db.jl")
 
 end # module

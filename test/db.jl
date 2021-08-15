@@ -8,6 +8,16 @@ function weird_model(t::Trace)
 end
 
 @testset "table creation" begin 
-    db = table(weird_model; num_iterations=10)
-    @info db
+    sqm = SQLiteModel(weird_model; num_iterations=100)
+    q = """
+        SELECT 
+            AVG(branch1_logprob) as avg_1_logprob,
+            AVG(branch2_logprob) as avg_2_logprob
+        FROM 
+            weird_model_results
+        WHERE 
+            choice < 0.25;
+    """
+    result = query(sqm, q)
+    @info result
 end
