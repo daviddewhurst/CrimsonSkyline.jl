@@ -131,7 +131,7 @@ function update(f, r :: SamplingResults{I}) where I <: InferenceType
             end
         end
         h = rewrite(f, t, marginals)
-        h(params...)
+        r = h(params...)
     end
     g
 end

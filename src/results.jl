@@ -208,7 +208,16 @@ parametric_posterior(address, dist::D, results::SamplingResults) where D <: Beta
 parametric_posterior(address, dist::D, results::SamplingResults) where D <: Dirichlet = fit_mle(Dirichlet, hcat(results[address]...); maxiter=5000, tol=1.0e-12)
 parametric_posterior(address, dist::D, results::SamplingResults) where D <: Binomial = fit_mle(Binomial, dist.n, results[address])
 
-univariate_continuous_parametric_posterior(address, dist, result) = insupport(dist, -1.0) ? fit(Normal, result[address]) : fit(LogNormal, result[address])
+function univariate_continuous_parametric_posterior(address, dist, result)
+    if insupport(dist, -1.0)
+        fit(Normal, result[address])
+    else
+        if !insupport(dist, 1.1)
+            return fit(Beta, result[address])
+        end
+        fit(LogNormal, result[address])
+    end
+end
 univariate_discrete_parametric_posterior(address, dist, result) = insupport(dist, -1) ? fit(DiscreteUniform, result[address]) : fit(Poisson, result[address])
 function multivariate_continuous_parametric_posterior(address, dist, result)
     if insupport(dist, -1.0 .* ones(size(dist)))

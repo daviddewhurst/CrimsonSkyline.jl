@@ -77,10 +77,11 @@ struct SQLModel{F} <: TabularModel{F}
     f::F
     db::SQLite.DB
 end
-function SQLModel(f::F; params = (), num_iterations = 100, method::InferenceType = FORWARD, inference_params = Dict()) where F
+function SQLModel(f::F; params = (), num_iterations = 100, method::InferenceType = FORWARD, inference_params = Dict(), name = nothing) where F
     df = to_df(f; params = params, num_iterations = num_iterations, method = method, inference_params = inference_params)
     db = SQLite.DB()
-    tablename = df |> SQLite.load!(db, "$(f)_results")
+    name === nothing && (name = "$(f)")
+    tablename = df |> SQLite.load!(db, "$(name)_results")
     @info "Created table $tablename"
     SQLModel(f, db)
 end
