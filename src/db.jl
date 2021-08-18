@@ -48,7 +48,7 @@ function get_data(results, column_names)
     data
 end
 
-function table(f; params = (), num_iterations = 100, method::InferenceType = FORWARD, inference_params = Dict())
+function to_df(f; params = (), num_iterations = 100, method::InferenceType = FORWARD, inference_params = Dict())
     check_sf(f)
     inference_params["num_iterations"] = num_iterations
     results = inference(f, method; params = params, inference_params = inference_params)
@@ -60,7 +60,7 @@ function table(f; params = (), num_iterations = 100, method::InferenceType = FOR
     narrow_column_types!(data)
     to_df(data)
 end
-export table
+export to_df
 
 abstract type TabularModel{F} end
 
@@ -69,24 +69,24 @@ struct DataFrameModel{F} <: TabularModel{F}
     table::DataFrame
 end
 function DataFrameModel(f::F; params = (), num_iterations = 100, method::InferenceType = FORWARD, inference_params = Dict()) where F
-    df = table(f; params = params, num_iterations = num_iterations, method = method, inference_params = inference_params)
+    df = to_df(f; params = params, num_iterations = num_iterations, method = method, inference_params = inference_params)
     DataFrameModel(f, df)
 end
 
-struct SQLiteModel{F} <: TabularModel{F}
+struct SQLModel{F} <: TabularModel{F}
     f::F
     db::SQLite.DB
 end
-function SQLiteModel(f::F; params = (), num_iterations = 100, method::InferenceType = FORWARD, inference_params = Dict()) where F
-    df = table(f; params = params, num_iterations = num_iterations, method = method, inference_params = inference_params)
+function SQLModel(f::F; params = (), num_iterations = 100, method::InferenceType = FORWARD, inference_params = Dict()) where F
+    df = to_df(f; params = params, num_iterations = num_iterations, method = method, inference_params = inference_params)
     db = SQLite.DB()
     tablename = df |> SQLite.load!(db, "$(f)_results")
     @info "Created table $tablename"
-    SQLiteModel(f, db)
+    SQLModel(f, db)
 end
-export DataFrameModel, SQLiteModel
+export DataFrameModel, SQLModel
 
-function query(sqm::SQLiteModel, q::String)
+function query(sqm::SQLModel, q::String)
     DBInterface.execute(sqm.db, q) |> DataFrame
 end
 export query

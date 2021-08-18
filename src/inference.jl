@@ -65,8 +65,8 @@ function inference(f, method::Metropolis; params = (), inference_params = Dict()
         mh(
             f;
             params = params,
-            burn = get(inference_params["burn"], 0),
-            thin = get(inference_params["thin"], 1),
+            burn = get(inference_params, "burn", 0),
+            thin = get(inference_params, "thin", 1),
             num_iterations = get(inference_params, "num_iterations", 2)
         )
     end

@@ -10,6 +10,7 @@ const ASYMMETRIC = Asymmetric()
 
 struct Metropolis <: InferenceType end
 const METROPOLIS = Metropolis()
+export METROPOLIS
 
 bare_metropolis_results() = BareResults{Metropolis}(METROPOLIS, DefaultDict{Any, Vector{Any}}([]))
 structured_metropolis_results() = StructuredResults{Metropolis}(METROPOLIS, Dict{String, Vector{Any}}(), Float64[])
