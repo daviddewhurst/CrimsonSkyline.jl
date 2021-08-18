@@ -8,6 +8,7 @@ Released under the MIT license.
 
 module CrimsonSkyline
 
+using DataFrames
 using DataStructures
 using Distributions
 using PrettyPrint: pprintln
@@ -17,6 +18,7 @@ using JuliaDB
 using JSON
 using Plots
 using PDMats
+using SQLite
 
 include("util.jl")
 
@@ -39,5 +41,8 @@ include("nested.jl")
 
 include("io.jl")
 include("plot.jl")
+
+include("inference.jl")
+include("db.jl")
 
 end # module

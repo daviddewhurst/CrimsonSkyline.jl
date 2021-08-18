@@ -35,7 +35,7 @@ end
 compile(p::TypedSF{T}, input::S, addresses::Vector{String}) where {T,S} = CompiledSF{T,S}(p, input, addresses)
 
 (p::TypedSF)(x) = x isa p.input_type ? (y = p.sf(trace(), x); y isa p.output_type ? y : error("Wrong output type")) : error("Wrong input type")
-(p::TypedSF)(x...) = x isa p.input_type ? (y = p.sf(trace(), x); y isa p.output_type ? y : error("Wrong output type")) : error("Wrong input type")
+(p::TypedSF)(x...) = x isa p.input_type ? (y = p.sf(trace(), x...); y isa p.output_type ? y : error("Wrong output type")) : error("Wrong input type")
 
 function guess_input_is_evidence(f, i) :: Bool
     t = trace()
