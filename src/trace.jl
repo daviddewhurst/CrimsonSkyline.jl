@@ -605,7 +605,7 @@ storing the value in trace `t` at address `a`.
 function sample(t :: Trace, a, f, v, i :: Deterministic; pa = ())
     T = typeof(v)
     r = f(v...)
-    n = node(T, a, f, false, i)
+    n = node(r, a, f, false, i)
     t[a] = n
     connect_pa_ch!(t, pa, a)
     r
