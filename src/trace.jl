@@ -596,16 +596,17 @@ end
 Creates a deterministic node mapping the tuple of data `v` through function `f`, 
 storing the value in trace `t` at address `a`.
 
-1. Infers input type from `v`
-2. Maps tuple of data `v` through function `f`, yielding `r = f(v...)`
-3. Creates a deterministic node and stores it in `t` at address `a`
-4. Optionally adds nodes corresponding to the addresses in `pa` as parent nodes
-5. Returns `r`
+1. Maps tuple of data `v` through function `f`, yielding `r = f(v...)`
+2. Creates a deterministic node and stores it in `t` at address `a`
+3. Optionally adds nodes corresponding to the addresses in `pa` as parent nodes
+4. Returns `r`
 """
 function sample(t :: Trace, a, f, v, i :: Deterministic; pa = ())
-    T = typeof(v)
+    # TODO: add better testing of this, just pushed two hotfixes from applied work
     r = f(v...)
-    n = node(r, a, f, false, i)
+    T = typeof(r)
+    n = node(T, a, f, false, i)
+    n.value = r
     t[a] = n
     connect_pa_ch!(t, pa, a)
     r
@@ -621,8 +622,7 @@ end
 @doc raw"""
     input(t :: Trace, a, d)
 
-Track a model input. Used only in graph intermediate representation and factor 
-graph.
+Track a model input.
 """
 input(t :: Trace, a, d) = sample(t, a, d, INPUT)
 
