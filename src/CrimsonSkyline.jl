@@ -20,29 +20,30 @@ using Plots
 using PDMats
 using SQLite
 
-include("util.jl")
+include("modeling/util.jl")
 
-include("trace.jl")
-include("distributions.jl")
+include("modeling/trace.jl")
+include("modeling/distributions.jl")
 
-include("results.jl")
+include("representation/results.jl")
 
-include("field.jl")
+include("modeling/field.jl")
 
-include("statistics.jl")
+include("representation/statistics.jl")
 
-include("effects.jl")
+include("modeling/effects.jl")
 
-include("forward.jl")
-include("rejection.jl")
-include("importance.jl")
-include("metropolis.jl")
-include("nested.jl")
+include("inference/forward.jl")
+include("inference/rejection.jl")
+include("inference/importance.jl")
+include("inference/metropolis.jl")
+include("inference/nested.jl")
 
-include("io.jl")
-include("plot.jl")
+include("representation/io.jl")
+include("representation/plot.jl")
 
-include("inference.jl")
-include("db.jl")
+include("inference/kernel.jl")
+include("inference/inference.jl")
+include("representation/db.jl")
 
 end # module

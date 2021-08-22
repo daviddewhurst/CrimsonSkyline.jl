@@ -73,10 +73,36 @@ function DataFrameModel(f::F; params = (), num_iterations = 100, method::Inferen
     DataFrameModel(f, df)
 end
 
+@doc raw"""
+    struct SQLModel{F} <: TabularModel{F}
+        f::F
+        db::SQLite.DB
+    end
+
+A representation of the model `f` as a SQL table.
+"""
 struct SQLModel{F} <: TabularModel{F}
     f::F
     db::SQLite.DB
 end
+
+@doc raw"""
+    function SQLModel(f::F; params = (), num_iterations = 100, method::InferenceType = FORWARD, inference_params = Dict(), name = nothing) where F
+
+Create a representation of the model `f` as a database table which can be queried using SQL (SQLite, specifically).
+This method works by first conducting inference on the model (including forward sampling if the user just wants to query the prior), 
+and then collecting sampled values in a table. The resulting table is titled `<name>_results` and includes a column for each address
+(titled `a`) that occurs in the union of all sampled traces and a corresponding column for each address's log probability (titled `a_logprob`).
+
+This methood *does* work with open-universe structured models; traces (rows in the table) that do not include address `a` have a 
+`NULL` in columns `a` and `a_logprob` in that row.
+
++ `params`: additional parameters to pass to the model during inference
++ `num_iterations`: number of iterations of inference to complete; the meaning is dependent on the inference algorithm used
++ `method`: an `InferenceType`, defaults to `Forward()` for forward sampling.
++ `inference_params`: a dict of parameters to pass to the inference method. 
++ `name`: a name to use instead of the model's name, which is used by default.
+"""
 function SQLModel(f::F; params = (), num_iterations = 100, method::InferenceType = FORWARD, inference_params = Dict(), name = nothing) where F
     df = to_df(f; params = params, num_iterations = num_iterations, method = method, inference_params = inference_params)
     db = SQLite.DB()
@@ -87,6 +113,11 @@ function SQLModel(f::F; params = (), num_iterations = 100, method::InferenceType
 end
 export DataFrameModel, SQLModel
 
+@doc raw"""
+    function query(sqm::SQLModel, q::String)
+
+Execute the SQLite query `q` against the `SQLModel` and return results as a `DataFrame`.
+"""
 function query(sqm::SQLModel, q::String)
     DBInterface.execute(sqm.db, q) |> DataFrame
 end

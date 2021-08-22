@@ -2,7 +2,7 @@
 
 ## trace
 To a large extent, `Node`s have local control over the behavior of inference algorithms via their 
-`interpretation`. There are a variety of `Interpretation`s. The type hierarchy is flat:
+`interpretation`. There are a variety of `Interpretation`s.
 ```
 abstract type Interpretation end
 struct Nonstandard <: Interpretation end
@@ -15,7 +15,7 @@ struct Proposed <: Interpretation end
 ```
 ```@autodocs
 Modules = [CrimsonSkyline]
-Pages = ["trace.jl"]
+Pages = ["modeling/trace.jl"]
 ```
 
 ## field
@@ -110,7 +110,7 @@ sample(t, "field", gf)
 
 ```@autodocs
 Modules = [CrimsonSkyline]
-Pages = ["field.jl"]
+Pages = ["modeling/field.jl"]
 ```
 
 ## io
@@ -150,14 +150,14 @@ new_t, _ = updated_model(trace(), dim, data)
 
 ```@autodocs
 Modules = [CrimsonSkyline]
-Pages = ["io.jl"]
+Pages = ["representation/io.jl"]
 ```
 
 ## effects
 A library of functions that change the interpretation of some or all nodes in a trace.
 ```@autodocs
 Modules = [CrimsonSkyline]
-Pages = ["effects.jl"]
+Pages = ["modeling/effects.jl"]
 ```
 
 ## basic sampling methods
@@ -165,7 +165,7 @@ Simple samplers such as forward and rejection sampling can be done "by hand", bu
 convenience methods are implemented to facilitate postprocessing of results.
 ```@autodocs
 Modules = [CrimsonSkyline]
-Pages = ["forward.jl","rejection.jl"]
+Pages = ["inference/forward.jl","inference/rejection.jl"]
 ```
 
 ## importance
@@ -177,7 +177,7 @@ Currently the following importance sampling algorithms are implemented:
 
 ```@autodocs
 Modules = [CrimsonSkyline]
-Pages = ["importance.jl"]
+Pages = ["inference/importance.jl"]
 ```
 
 ## metropolis
@@ -280,25 +280,47 @@ For more examples, check back soon.
 
 ```@autodocs
 Modules = [CrimsonSkyline]
-Pages = ["metropolis.jl"]
+Pages = ["inference/metropolis.jl"]
 ```
 
 ## nested
 ```@autodocs
 Modules = [CrimsonSkyline]
-Pages = ["nested.jl"]
+Pages = ["inference/nested.jl"]
 ```
 
 ## results
 ```@autodocs
 Modules = [CrimsonSkyline]
-Pages = ["results.jl"]
+Pages = ["representation/results.jl"]
 ```
 
 ## statistics
 ```@autodocs
 Modules = [CrimsonSkyline]
-Pages = ["statistics.jl"]
+Pages = ["representation/statistics.jl"]
+```
+
+## kernel
+There are methods to automatically generate proposal kernels.
+```@autodocs
+Modules = [CrimsonSkyline]
+Pages = ["inference/kernel.jl"]
+```
+
+## inference
+There is a high-level uniform interface to built-in inference algorithms.
+```@autodocs 
+Modules = [CrimsonSkyline]
+Pages = ["inference/inference.jl"]
+```
+
+## db
+To facilitate high-level probabilistic reasoning, it is possible to treat stochastic functions as database tables 
+and query them using a dialect of SQL (SQLite).
+```@autodocs
+Modules = [CrimsonSkyline]
+Pages = ["representation/db.jl"]
 ```
 
 ## Index

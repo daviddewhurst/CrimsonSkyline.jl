@@ -1,4 +1,4 @@
-include("../src/util.jl")
+include("../src/modeling/util.jl")
 
 function model(t :: Trace, data)
     loc = sample(t, "loc", Normal(0.0, 10.0))

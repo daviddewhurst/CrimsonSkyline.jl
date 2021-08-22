@@ -3,10 +3,20 @@ is_sf(f) = any(map(m -> Trace in m.parameters, signatures(f)))
 check_sf(f) = !is_sf(f) && error("$f does not appear to be a stochastic function. (Try type annotation if it is.)")
 export is_sf, check_sf
 
+@doc raw"""
+    function inference(f, method::Forward; params = (), inference_params = Dict())
+
+No additional arguments.
+"""
 function inference(f, method::Forward; params = (), inference_params = Dict())
     forward_sampling(f; params = params, num_iterations = get(inference_params, "num_iterations", 1))
 end
 
+@doc raw"""
+    function inference(f, method::LikelihoodWeighting; params = (), inference_params = Dict())
+
+No additional arguments.
+"""
 function inference(f, method::LikelihoodWeighting; params = (), inference_params = Dict())
     likelihood_weighting(f, params...; nsamples = get(inference_params, "num_iterations", 1))
 end
@@ -21,6 +31,7 @@ to the function, i.e.,
 `inference(f, i::InferenceType; params = (), inference_params = Dict())`.
 All methods accept `inference_params["num_iterations"]::Int64` as the number of iterations of
 inference to perform; the interpretation of that is inference algorithm-dependent.
+**This default method performs inference using `LikelihoodWeighting()`.**
 """
 inference(f; params = (), inference_params = Dict()) = inference_params(f, LW; params = params, inference_params = inference_params)
 
@@ -37,6 +48,11 @@ function inference(f, method::ImportanceSampling; params = (), inference_params 
     importance_sampling(f, kernel; params = params, nsamples = get(inference_params, "num_iterations", 1))
 end
 
+@doc raw"""
+    function inference(f, method::Nested; params = (), inference_params = Dict())
+
+No additional arguments.
+"""
 function inference(f, method::Nested; params = (), inference_params = Dict())
     nested(f, rejection; params = params, num_points = get(inference_params, "num_iterations", 2))
 end
