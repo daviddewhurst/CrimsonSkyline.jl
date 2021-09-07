@@ -8,11 +8,13 @@ Released under the MIT license.
 
 module CrimsonSkyline
 
+using Base.Iterators: product
 using DataFrames
 using DataStructures
 using Distributions
 using PrettyPrint: pprintln
 using StatsBase
+using LightGraphs
 using Logging
 using JuliaDB
 using JSON
@@ -24,6 +26,7 @@ include("modeling/util.jl")
 
 include("modeling/trace.jl")
 include("modeling/distributions.jl")
+include("modeling/graph.jl")
 
 include("representation/results.jl")
 
