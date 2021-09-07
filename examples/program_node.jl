@@ -3,6 +3,7 @@ Pkg.activate("..")
 
 using CrimsonSkyline
 using Distributions: Normal, LogNormal, Poisson
+using StatsBase: mean
 
 function log_rate_model(t::Trace, ::Tuple)
     loc = sample(t, "loc", Normal())
@@ -21,9 +22,17 @@ function main()
         (),
         ["log_rate"]
     )
-    t = trace()
-    count_model(t, compiled_log_rate_model)
-    @info "Compiled log rate model, recorded log rate node: $t"
+    conditioned_count_model = condition(
+        count_model,
+        Dict("count" => 30)
+    )
+    results = inference(
+        conditioned_count_model, Metropolis();
+        params = (compiled_log_rate_model,),
+        inference_params = Dict("num_iterations" => 55000, "burn" => 5000, "thin" => 500)
+    )
+    @info "Posterior rate: $(exp(mean(results, "log_rate")))"
+
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__

@@ -37,6 +37,7 @@ See the `examples` directory:
 + `coin_flip.jl`: classic "how biased is this coin" problem
 + `effects.jl`: usage of effect functionals that change program interpretation
 + `forecast.jl`: time series inference, posterior predictive, and generation of online forecasts using effects
++ `program_node.jl`: compilation of a probabilistic program into a sample node
 + `regression.jl`: Bayesian linear regression and serving a posterior predictive model
 + `speedup.jl`: Illustrates ways to speed up inference, including using [plates](https://en.wikipedia.org/wiki/Plate_notation) and typed traces.
 + `time_series.jl`: basic time series inference and model comparison
