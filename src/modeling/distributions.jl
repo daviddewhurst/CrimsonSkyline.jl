@@ -57,10 +57,11 @@ function select_csf_sample(csf::CompiledSF, samples)
 end
 
 function sample(csf::CompiledSF)
+    params = csf.input === nothing ? () : (csf.input,)
     if csf.input_is_evidence
-        mh(csf.p.sf; params = (csf.input,))
+        mh(csf.p.sf; params = params)
     else
-        forward_sampling(csf.p.sf; params = (csf.input,))
+        forward_sampling(csf.p.sf; params = params)
     end
 end
 

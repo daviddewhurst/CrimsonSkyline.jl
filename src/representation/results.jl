@@ -234,30 +234,41 @@ function multivariate_continuous_parametric_posterior(address, dist, result)
 end
 
 function logprob(r::Union{NonparametricSamplingResults{I},ParametricSamplingResults{I}}, address::T) where {I<:InferenceType, T}
+    count = 0
     denom = 0
-    lps = 0.0
+    lps = Float64[]
     for trace in r.traces
         for (a, node) in trace.trace
             if a == address
                 denom += 1
-                lps += node.logprob_sum
+                push!(lps, node.logprob_sum)
             end
         end
+        count += 1
     end
-    lps / denom
+    p_in_trace = denom / count
+    logsumexp(lps) - log(denom) + log(p_in_trace)
 end
 function logprob(r::Union{NonparametricSamplingResults{I},ParametricSamplingResults{I}}, addresses::Vector{T}) where {I<:InferenceType, T}
+    counts = Dict(a => 0 for a in addresses)
+    any_in_tr = false
     denom = 0
-    lps = 0.0
+    lps = Float64[]
     for trace in r.traces
         for (a, node) in trace.trace
             if a in addresses
-                denom += 1
-                lps += node.logprob_sum
+                any_in_tr = true
+                counts[a] += 1
+                push!(lps, node.logprob_sum)
             end
         end
+        if any_in_tr
+            denom += 1
+            any_in_tr = false
+        end
     end
-    lps / denom
+    p_in_trace = collect(values(counts)) ./ length(r.traces)
+    logsumexp(lps) - log(denom) + sum(log.(p_in_trace))
 end
 export logprob
 
