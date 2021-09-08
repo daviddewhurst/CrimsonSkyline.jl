@@ -8,7 +8,7 @@ The resulting proposal kernel is a normal distribution, ``z' | z \sim \mathrm{No
 function make_kernel(f, node::N, d::D) where {N<:Node, D<:ContinuousUnivariateDistribution}
     ex = extrema(node.dist)
     sd = std(node.dist)
-    function k(t0, t1, params...)
+    function k(t0::Trace, t1::Trace, params...)
         n = truncated(Normal(t0[node.address].value, sd * 0.5), ex[1], ex[2])
         propose(t1, node.address, n)
     end
@@ -27,7 +27,11 @@ boundary of the distribution's support, with the sign depending on the left or r
 """
 function make_kernel(f, node::N, d::D) where {N<:Node, D<:DiscreteUnivariateDistribution}
     ex = extrema(node.dist)
-    function k(t0, t1, params...)
+    make_kernel(f, node, d, ex, Val(ex[2]))
+end
+
+function make_kernel(f, node::N, d::D, ex, v) where {N<:Node, D<:DiscreteUnivariateDistribution}
+    function k(t0::Trace, t1::Trace, params...)
         last = t0[node.address].value
         left = last - 1
         right = last + 1
@@ -44,6 +48,14 @@ function make_kernel(f, node::N, d::D) where {N<:Node, D<:DiscreteUnivariateDist
     k
 end
 
+function make_kernel(f, node::N, d::D, ex, ::Val{Inf}) where {N<:Node, D<:DiscreteUnivariateDistribution}
+    ex = extrema(node.dist)
+    k(t0::Trace, t1::Trace, params...) = propose(t1, node.address, 
+        truncated(Poisson(t0[node.address].value), ex[1], 2 * t0[node.address].value)
+    )
+    k
+end
+
 @doc raw"""
     function make_kernel(f, node::N, d::D) where {N<:Node, D<:ContinuousMultivariateDistribution}
 
@@ -54,7 +66,7 @@ is constrained. The resulting proposal kernel is a multivariate normal,
 """
 function make_kernel(f, node::N, d::D) where {N<:Node, D<:ContinuousMultivariateDistribution}
     dim = size(node.dist)[1]
-    k(t0, t1, params...) = propose(t1, node.address, MvNormal(t0[node.address].value, 1.0 / sqrt(dim)))
+    k(t0::Trace, t1::Trace, params...) = propose(t1, node.address, MvNormal(t0[node.address].value, 1.0 / sqrt(dim)))
     k
 end
 
@@ -65,7 +77,7 @@ Create a single site proposal kernel for an arbitrary site. This method draws fr
 and is therefore inefficient (both computationally and statistically). 
 """
 function make_kernel(f, node::N, d) where {N<:Node}
-    function k(t0, t1, params...)
+    function k(t0::Trace, t1::Trace, params...)
         t = trace()
         f(t, params...)
         propose(t1, node.address, t[node.address].dist)
@@ -89,7 +101,7 @@ function make_kernels(f, t::Trace, addresses::Vector{T}; params = (), include::B
     kernels = []
     cond = (a, addresses) -> include ? a in addresses : !(a in addresses)
     for (a, n) in t.trace
-        if cond(a, addresses)
+        if cond(a, addresses) && !t.trace[a].observed
             push!(kernels, make_kernel(f, n))
         end
     end
@@ -106,9 +118,9 @@ model site. The tuple of params are any necessary parameters needed to execute
 """
 function make_kernels(f; params = ())
     t = trace()
-    f(t)
+    f(t, params...)
     a = collect(keys(t))
-    make_kernels(f, t, a)
+    make_kernels(f, t, a; params = params)
 end
 
 export make_kernel, make_kernels
