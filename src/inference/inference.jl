@@ -84,8 +84,7 @@ function inference(f, method::Metropolis; params = (), inference_params = Dict()
             params = params,
             burn = get(inference_params, "burn", 0),
             thin = get(inference_params, "thin", 1),
-            num_iterations = get(inference_params, "num_iterations", 2),
-            inverse_verbosity = get(inference_params, "inverse_verbosity", 100)
+            num_iterations = get(inference_params, "num_iterations", 2)
         )
     end
 end
