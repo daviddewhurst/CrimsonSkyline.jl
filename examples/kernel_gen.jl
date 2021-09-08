@@ -12,6 +12,7 @@ function bayes_net(t::Trace, data::Int64)
 end
 
 function main()
+    @warn "~~~ generating kernels for closed-world inference (model is identifiable) ~~~"
     data = 7
     kernels = make_kernels(bayes_net; params = (data,))
     results = inference(
@@ -28,7 +29,6 @@ function main()
     prob_stats = map(f -> f(results, "prob"), [mean, std])
     count_stats = map(f -> f(results, "count"), [mean, std])
     @info "Posterior stats: prob (mean, std) = $prob_stats, count (mean, std) = $count_stats"
-
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__

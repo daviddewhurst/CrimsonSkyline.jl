@@ -33,7 +33,7 @@ All methods accept `inference_params["num_iterations"]::Int64` as the number of 
 inference to perform; the interpretation of that is inference algorithm-dependent.
 **This default method performs inference using `LikelihoodWeighting()`.**
 """
-inference(f; params = (), inference_params = Dict()) = inference_params(f, LW; params = params, inference_params = inference_params)
+inference(f; params = (), inference_params = Dict()) = inference(f, LW; params = params, inference_params = inference_params)
 
 @doc raw"""
     function inference(f, method::ImportanceSampling; params = (), inference_params = Dict())

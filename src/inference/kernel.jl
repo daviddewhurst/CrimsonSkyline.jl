@@ -47,15 +47,15 @@ function make_kernel(f, node::N, d::D, ex, v) where {N<:Node, D<:DiscreteUnivari
     end
     k
 end
-
+#=
 function make_kernel(f, node::N, d::D, ex, ::Val{Inf}) where {N<:Node, D<:DiscreteUnivariateDistribution}
     ex = extrema(node.dist)
-    k(t0::Trace, t1::Trace, params...) = propose(t1, node.address, 
-        truncated(Poisson(t0[node.address].value), ex[1], 2 * t0[node.address].value)
-    )
+    k1(t0::Trace, t1::Trace, params...) = propose(t1, node.address, truncated(Poisson(t0[node.address].value), t0[node.address].value - 10, t0[node.address].value + 10))
+    k2 = make_kernel(f, node, d, ex, nothing)
+    k(t0::Trace, t1::Trace, params...) = rand() < 0.1 ? k1(t0, t1, params...) : k2(t0, t1, params...)
     k
 end
-
+=#
 @doc raw"""
     function make_kernel(f, node::N, d::D) where {N<:Node, D<:ContinuousMultivariateDistribution}
 
