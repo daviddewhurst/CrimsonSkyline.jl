@@ -13,7 +13,6 @@ const Maybe{T} = Union{T,Nothing}
 
 Random.seed!(2021)
 
-#=
 include("basic.jl")
 include("condition_and_observe.jl")
 include("distributions.jl")
@@ -27,5 +26,4 @@ include("typed_trace.jl")
 include("statistics.jl")
 include("db.jl")
 include("kernel.jl")
-=#
 include("dsl.jl")
