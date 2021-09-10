@@ -323,6 +323,13 @@ Modules = [CrimsonSkyline]
 Pages = ["representation/db.jl"]
 ```
 
+## dsl
+There is a pre-alpha DSL for simplifying model definitions.
+```@autodocs
+Modules = [CrimsonSkyline]
+Pages = ["modeling/dsl.jl"]
+```
+
 ## Index
 ```@index
 ```

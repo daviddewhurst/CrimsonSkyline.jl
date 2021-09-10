@@ -12,7 +12,6 @@ Why-wouldn't-you-haves:
 + As a Julia library should, it actually supports multiple dispatch. (C.f. other universal PPLs embedded in Julia that do not.)
 
 Pet-peeve-haves:
-+ It doesn't define any macros. 
 + It doesn't maintain any global state, e.g., there is no global parameter store. All inference is controlled locally by both the (user-defined) inference program and nodes themselves.
 
 ## Inference algorithms

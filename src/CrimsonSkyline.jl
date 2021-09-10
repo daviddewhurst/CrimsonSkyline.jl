@@ -16,6 +16,8 @@ using StatsBase
 using Logging
 using JuliaDB
 using JSON
+using MacroTools
+using MacroTools: prewalk
 using Plots
 using PDMats
 using SQLite
@@ -45,5 +47,7 @@ include("representation/plot.jl")
 include("inference/kernel.jl")
 include("inference/inference.jl")
 include("representation/db.jl")
+
+include("modeling/dsl.jl")
 
 end # module
