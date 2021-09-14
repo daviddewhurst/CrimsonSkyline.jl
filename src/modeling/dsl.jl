@@ -1,4 +1,13 @@
-const fn_primitives = [:sample, :observe, :transform, :plate]
+const fn_primitives = [:sample, :observe, :transform, :plate, :track]
+
+@doc raw"""
+    track(t, address, value)
+
+Tracks the `value` in the trace `t` at `address`. Does not affect the log
+probability of the trace. 
+"""
+track(t, address, value) = transform(t, address, x -> x, value)
+export track
 
 get_fname_from_expr(f) = f.args[1].args[1]  # function name, the function has to be defined function ... end
 
@@ -36,7 +45,8 @@ and obviates address creation. For example, the model
 function f(t::Trace, data::Vector{Float64})
     loc = sample(t, "loc", Normal())
     log_scale = sample(t, "log_scale", Normal())
-    plate(t, observe, "data", Normal(loc, exp(log_scale)), data)
+    scale = transform(t, "scale", x -> exp(x), log_scale)
+    plate(t, observe, "data", Normal(loc, scale), data)
 end
 ```
 can be created instead by writing
@@ -44,7 +54,8 @@ can be created instead by writing
 @model function simple_model(data::Vector{Float64})
     loc = sample(Normal())
     log_scale = sample(Normal())
-    data = plate(observe, Normal(loc, exp(log_scale)), data)
+    scale = track(exp(log_scale))
+    data = plate(observe, Normal(loc, scale), data)
 end
 ```
 The resulting function `f` is exactly equal to the first definition. 
@@ -62,5 +73,4 @@ macro model(f)
         $(esc(fname)) = $f
     end
 end
-
 export @model

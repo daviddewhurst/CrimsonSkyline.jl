@@ -12,3 +12,13 @@ end
     post_loc = mean(results, "loc")
     @info "Posterior location estimate = $post_loc"
 end
+
+@model function g(x::Float64)
+    x = track(x)
+end
+
+@testset "model expansion 2" begin
+    t = trace()
+    g(t, 3.0)
+    @info t
+end
