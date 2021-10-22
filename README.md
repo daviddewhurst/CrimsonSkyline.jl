@@ -69,6 +69,9 @@ Computing `mean(inference_results, "bias")` should return a value that is very c
 #### Other information
 CrimsonSkyline.jl is released under the MIT license. Copyright David Rushing Dewhurst and Charles River Analytics Inc., 2021 - present. The development repository is at [https://gitlab.com/daviddewhurst/CrimsonSkyline.jl](https://gitlab.com/daviddewhurst/CrimsonSkyline.jl), and it is mirrored at [https://github.com/daviddewhurst/CrimsonSkyline.jl](https://github.com/daviddewhurst/CrimsonSkyline.jl) for Julia packaging purposes.
 
+`CrimsonSkyline.jl` has been tested under MacOS High Sierra and Manjaro 21.0 (Ornara); it *should* work on any reasonably modern 64-bit Linux distribution.
+It has *not* been tested on any Windows distribution. 
+
 #### Support
 We are grateful for financial support from DARPA. 
 This material is based upon work supported by the NIWC Atlantic under Contract No. N6523620C8005. 
