@@ -66,6 +66,11 @@ inference_results = mh(coin_model; params = (data,))
 The analytical posterior mean `"bias"` is roughly `0.6429` -- see `examples/coin_flip.jl`, or any introductory probability course, for more.
 Computing `mean(inference_results, "bias")` should return a value that is very close to this number (again, run `examples/coin_flip.jl` to see this in action).
 
+#### Installation
+```
+]add https://gitlab.com/daviddewhurst/CrimsonSkyline.jl#master
+```
+
 #### Other information
 CrimsonSkyline.jl is released under the MIT license. Copyright David Rushing Dewhurst and Charles River Analytics Inc., 2021 - present. The development repository is at [https://gitlab.com/daviddewhurst/CrimsonSkyline.jl](https://gitlab.com/daviddewhurst/CrimsonSkyline.jl), and it is mirrored at [https://github.com/daviddewhurst/CrimsonSkyline.jl](https://github.com/daviddewhurst/CrimsonSkyline.jl) for Julia packaging purposes.
 
