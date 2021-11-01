@@ -22,3 +22,13 @@ end
     g(t, 3.0)
     @info t
 end
+
+function string_track(t::Trace, s::String)
+    track(t, "test_track_string", s)
+end
+
+@testset "track strings" begin
+    t = trace()
+    string_track(t, "hi")
+    @info t
+end
