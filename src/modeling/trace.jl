@@ -612,6 +612,16 @@ function sample(t :: Trace, a, f, v, i :: Deterministic; pa = ())
     r
 end
 
+function sample(t :: Trace, a, f, v::String, i :: Deterministic; pa = ())
+    r = f(v)
+    T = typeof(r)
+    n = node(T, a, f, false, i)
+    n.value = r
+    t[a] = n
+    connect_pa_ch!(t, pa, a)
+    r
+end
+
 function sample(t :: Trace, a, d, i :: Input)
     n = node(d, a, INPUT, true, i)
     t[a] = n
